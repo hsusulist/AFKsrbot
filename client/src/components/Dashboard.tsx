@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import BotStatus from "./BotStatus";
 import ChatLog from "./ChatLog";
 import ControlPanel from "./ControlPanel";
@@ -9,110 +10,182 @@ import StatsPanel from "./StatsPanel";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Settings, Monitor } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
+import { socketManager } from "@/lib/socket";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { BotStatus as BotStatusType, ChatMessage, Player, InventoryItem, ServerInfo as ServerInfoType, BotStats } from "@shared/schema";
 
 export default function Dashboard() {
   const { theme, setTheme } = useTheme();
-  const [botRunning, setBotRunning] = useState(true);
-  const [connected, setConnected] = useState(true);
+  const { toast } = useToast();
+  
+  // Real-time data state
+  const [botStatus, setBotStatus] = useState<BotStatusType>({
+    isOnline: false,
+    isConnected: false,
+    health: null,
+    food: null,
+    position: null,
+    uptime: '0s',
+    playersNearby: 0
+  });
+  const [serverInfo, setServerInfo] = useState<ServerInfoType | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [stats, setStats] = useState<BotStats>({
+    messagesReceived: 0,
+    greetingsSent: 0,
+    distanceWalked: 0,
+    playersGreeted: 0,
+    uptimePercentage: 0,
+    interactionsToday: 0
+  });
 
-  // todo: remove mock functionality - all data below would come from real bot API
-  const mockChatMessages = [
-    {
-      id: '1',
-      timestamp: '14:32:15',
-      player: 'Steve123',
-      message: 'Hey everyone!',
-      type: 'chat' as const
+  // Fetch initial data using default authenticated fetcher
+  const { data: initialStatus } = useQuery({
+    queryKey: ['/api/bot/status'],
+    refetchInterval: 10000, // Fallback polling every 10 seconds
+  });
+
+  const { data: initialStats } = useQuery({
+    queryKey: ['/api/bot/stats'],
+    refetchInterval: 30000, // Update stats every 30 seconds
+  });
+
+  const { data: initialChatHistory } = useQuery({
+    queryKey: ['/api/bot/chat'],
+  });
+
+  // Bot control mutations
+  const startBotMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/bot/start'),
+    onSuccess: () => {
+      toast({ title: "Bot started successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/bot/status'] });
     },
-    {
-      id: '2', 
-      timestamp: '14:32:18',
-      player: 'AFKsrbot',
-      message: 'Hi Steve123! Do you love the server?',
-      type: 'bot' as const
-    },
-    {
-      id: '3',
-      timestamp: '14:32:22',
-      player: 'Steve123', 
-      message: 'Yes I do!',
-      type: 'chat' as const
-    },
-    {
-      id: '4',
-      timestamp: '14:32:25',
-      player: 'AFKsrbot',
-      message: 'Me too I loved the server very much',
-      type: 'bot' as const
-    },
-    {
-      id: '5',
-      timestamp: '14:33:10',
-      player: 'Server',
-      message: 'Player Miner456 joined the game',
-      type: 'join' as const
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to start bot", 
+        description: error.message || "Unknown error",
+        variant: "destructive" 
+      });
     }
-  ];
+  });
 
-  const mockPlayers = [
-    {
-      id: '1',
-      username: 'Steve123',
-      ping: 45,
-      isOperator: false,
-      distance: 234,
-      lastSeen: '2 min ago'
+  const stopBotMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/bot/stop'),
+    onSuccess: () => {
+      toast({ title: "Bot stopped successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/bot/status'] });
     },
-    {
-      id: '2', 
-      username: 'AdminUser',
-      ping: 23,
-      isOperator: true,
-      distance: 1250,
-      lastSeen: '5 min ago'
-    },
-    {
-      id: '3',
-      username: 'Miner456',
-      ping: 78,
-      isOperator: false,
-      distance: 89,
-      lastSeen: '1 min ago'
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to stop bot", 
+        description: error.message || "Unknown error",
+        variant: "destructive" 
+      });
     }
-  ];
+  });
 
-  const mockInventory = [
-    {
-      id: '1',
-      name: 'Diamond Sword',
-      count: 1,
-      slot: 0,
-      type: 'weapon' as const
+  const restartBotMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/bot/restart'),
+    onSuccess: () => {
+      toast({ title: "Bot restart initiated" });
+      queryClient.invalidateQueries({ queryKey: ['/api/bot/status'] });
     },
-    {
-      id: '2',
-      name: 'Iron Chestplate',
-      count: 1,
-      slot: 1,
-      type: 'armor' as const
-    },
-    {
-      id: '3',
-      name: 'Cooked Beef',
-      count: 32,
-      slot: 2,
-      type: 'food' as const
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to restart bot", 
+        description: error.message || "Unknown error",
+        variant: "destructive" 
+      });
     }
-  ];
+  });
 
-  const mockStats = {
-    messagesReceived: 2847,
-    greetingsSent: 189,
-    distanceWalked: 15234,
-    playersGreeted: 47,
-    uptimePercentage: 97,
-    interactionsToday: 23
-  };
+  // Set up WebSocket connection and listeners
+  useEffect(() => {
+    const socket = socketManager.connect();
+
+    // Set up event listeners
+    const handleBotStatus = (status: BotStatusType) => setBotStatus(status);
+    const handleServerInfo = (info: ServerInfoType) => setServerInfo(info);
+    const handleChatMessage = (message: ChatMessage) => {
+      setChatMessages(prev => [...prev.slice(-99), message]); // Keep last 100 messages
+    };
+    const handleChatHistory = (history: ChatMessage[]) => setChatMessages(history);
+    const handlePlayers = (playerList: Player[]) => setPlayers(playerList);
+    const handleInventory = (items: InventoryItem[]) => setInventory(items);
+    const handleBotError = (error: string) => {
+      toast({ 
+        title: "Bot Error", 
+        description: error,
+        variant: "destructive" 
+      });
+    };
+
+    socketManager.on('botStatus', handleBotStatus);
+    socketManager.on('serverInfo', handleServerInfo);
+    socketManager.on('chatMessage', handleChatMessage);
+    socketManager.on('chatHistory', handleChatHistory);
+    socketManager.on('players', handlePlayers);
+    socketManager.on('inventory', handleInventory);
+    socketManager.on('botError', handleBotError);
+
+    // Request initial data
+    socketManager.requestBotStatus();
+    socketManager.requestChatHistory();
+
+    // Cleanup on unmount
+    return () => {
+      socketManager.off('botStatus', handleBotStatus);
+      socketManager.off('serverInfo', handleServerInfo);
+      socketManager.off('chatMessage', handleChatMessage);
+      socketManager.off('chatHistory', handleChatHistory);
+      socketManager.off('players', handlePlayers);
+      socketManager.off('inventory', handleInventory);
+      socketManager.off('botError', handleBotError);
+    };
+  }, [toast]);
+
+  // Update state from initial API calls with proper type checking
+  useEffect(() => {
+    if (initialStatus && typeof initialStatus === 'object') {
+      const status = initialStatus as any;
+      setBotStatus({
+        isOnline: status.isOnline ?? false,
+        isConnected: status.isConnected ?? false,
+        health: status.health ?? null,
+        food: status.food ?? null,
+        position: status.position ?? null,
+        uptime: status.uptime ?? '0s',
+        playersNearby: status.playersNearby ?? 0
+      });
+      if (status.serverInfo && typeof status.serverInfo === 'object') {
+        setServerInfo(status.serverInfo as ServerInfoType);
+      }
+    }
+  }, [initialStatus]);
+
+  useEffect(() => {
+    if (initialStats && typeof initialStats === 'object') {
+      const stats = initialStats as any;
+      setStats({
+        messagesReceived: stats.messagesReceived ?? 0,
+        greetingsSent: stats.greetingsSent ?? 0,
+        distanceWalked: stats.distanceWalked ?? 0,
+        playersGreeted: stats.playersGreeted ?? 0,
+        uptimePercentage: stats.uptimePercentage ?? 0,
+        interactionsToday: stats.interactionsToday ?? 0
+      });
+    }
+  }, [initialStats]);
+
+  useEffect(() => {
+    if (initialChatHistory && Array.isArray(initialChatHistory)) {
+      setChatMessages(initialChatHistory as ChatMessage[]);
+    }
+  }, [initialChatHistory]);
 
   const handleThemeToggle = () => {
     if (theme === "dark") {
@@ -120,6 +193,22 @@ export default function Dashboard() {
     } else {
       setTheme("dark");
     }
+  };
+
+  const handleStartBot = () => {
+    startBotMutation.mutate();
+  };
+
+  const handleStopBot = () => {
+    stopBotMutation.mutate();
+  };
+
+  const handleRestartBot = () => {
+    restartBotMutation.mutate();
+  };
+
+  const handleSettings = () => {
+    toast({ title: "Settings panel coming soon!" });
   };
 
   return (
@@ -158,7 +247,7 @@ export default function Dashboard() {
               <Button
                 variant="outline" 
                 size="icon"
-                onClick={() => console.log('Settings opened')}
+                onClick={handleSettings}
                 data-testid="button-settings-main"
               >
                 <Settings className="h-4 w-4" />
@@ -174,56 +263,52 @@ export default function Dashboard() {
           {/* Left Column */}
           <div className="space-y-6">
             <BotStatus
-              isOnline={connected}
-              health={95}
-              food={78}
-              position={{ x: 1234, y: 64, z: -567 }}
-              uptime="2h 14m"
-              playersNearby={3}
+              isOnline={botStatus.isConnected}
+              health={botStatus.health || 0}
+              food={botStatus.food || 0}
+              position={botStatus.position || { x: 0, y: 0, z: 0 }}
+              uptime={botStatus.uptime}
+              playersNearby={botStatus.playersNearby}
             />
             
             <ControlPanel
-              isConnected={connected}
-              isRunning={botRunning}
-              onStart={() => {
-                setBotRunning(true);
-                console.log('Bot started');
-              }}
-              onStop={() => {
-                setBotRunning(false);
-                console.log('Bot stopped');
-              }}
-              onRestart={() => console.log('Bot restarted')}
-              onSettings={() => console.log('Settings opened')}
+              isConnected={botStatus.isConnected}
+              isRunning={botStatus.isConnected}
+              onStart={handleStartBot}
+              onStop={handleStopBot}
+              onRestart={handleRestartBot}
+              onSettings={handleSettings}
             />
 
-            <ServerInfo
-              host="play.example.com"
-              port={25565}
-              isConnected={connected}
-              playerCount={24}
-              maxPlayers={50}
-              ping={37}
-              version="1.21.1"
-            />
+            {serverInfo && (
+              <ServerInfo
+                host={serverInfo.host}
+                port={serverInfo.port}
+                isConnected={serverInfo.isConnected}
+                playerCount={serverInfo.playerCount}
+                maxPlayers={serverInfo.maxPlayers}
+                ping={serverInfo.ping}
+                version={serverInfo.version}
+              />
+            )}
           </div>
 
           {/* Center Column */}
           <div className="space-y-6">
-            <ChatLog messages={mockChatMessages} />
+            <ChatLog messages={chatMessages} />
             
             <PlayerList 
-              players={mockPlayers} 
-              totalOnline={24} 
+              players={players} 
+              totalOnline={serverInfo?.playerCount || 0} 
             />
           </div>
 
           {/* Right Column */}
           <div className="space-y-6">
-            <StatsPanel stats={mockStats} />
+            <StatsPanel stats={stats} />
             
             <InventoryDisplay 
-              items={mockInventory} 
+              items={inventory} 
               totalSlots={36} 
             />
           </div>
