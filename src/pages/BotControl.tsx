@@ -20,8 +20,13 @@ import {
 export default function BotControl() {
   const [botToken, setBotToken] = useState("");
   const [botName, setBotName] = useState("AFK Bot");
+  const [serverIP, setServerIP] = useState("");
+  const [serverPort, setServerPort] = useState("");
+  const [botPassword, setBotPassword] = useState("");
   const [isConnected, setIsConnected] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
   const [showToken, setShowToken] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [autoStart, setAutoStart] = useState(true);
   const { toast } = useToast();
 
@@ -30,6 +35,14 @@ export default function BotControl() {
       toast({
         title: "Error",
         description: "Please enter a valid bot token",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!serverIP.trim() || !serverPort.trim()) {
+      toast({
+        title: "Error", 
+        description: "Please enter server IP and port",
         variant: "destructive"
       });
       return;
@@ -48,9 +61,36 @@ export default function BotControl() {
 
   const handleDisconnect = () => {
     setIsConnected(false);
+    setIsRunning(false);
     toast({
       title: "Disconnected",
       description: "Bot has been disconnected",
+      variant: "default"
+    });
+  };
+
+  const handleStartBot = () => {
+    if (!isConnected) {
+      toast({
+        title: "Error",
+        description: "Please connect the bot first",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsRunning(true);
+    toast({
+      title: "Bot Started",
+      description: "Bot is now running and ready to accept commands",
+      variant: "default"
+    });
+  };
+
+  const handleStopBot = () => {
+    setIsRunning(false);
+    toast({
+      title: "Bot Stopped", 
+      description: "Bot has been stopped",
       variant: "default"
     });
   };
@@ -66,17 +106,21 @@ export default function BotControl() {
           </div>
           <div className="flex items-center gap-3">
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-              isConnected 
-                ? "bg-success/10 text-success border border-success/20" 
+              isRunning
+                ? "bg-success/10 text-success border border-success/20"
+                : isConnected 
+                ? "bg-warning/10 text-warning border border-warning/20" 
                 : "bg-muted text-muted-foreground border border-border"
             }`}>
-              {isConnected ? (
+              {isRunning ? (
+                <CheckCircle className="w-4 h-4" />
+              ) : isConnected ? (
                 <CheckCircle className="w-4 h-4" />
               ) : (
                 <XCircle className="w-4 h-4" />
               )}
               <span className="text-sm font-medium">
-                {isConnected ? "Connected" : "Disconnected"}
+                {isRunning ? "Running" : isConnected ? "Connected" : "Disconnected"}
               </span>
             </div>
           </div>
@@ -102,6 +146,59 @@ export default function BotControl() {
                   className="mt-1"
                   placeholder="Enter bot name"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="serverIP" className="text-sm font-medium text-foreground">
+                    Server IP
+                  </Label>
+                  <Input
+                    id="serverIP"
+                    value={serverIP}
+                    onChange={(e) => setServerIP(e.target.value)}
+                    className="mt-1"
+                    placeholder="127.0.0.1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="serverPort" className="text-sm font-medium text-foreground">
+                    Server Port
+                  </Label>
+                  <Input
+                    id="serverPort"
+                    value={serverPort}
+                    onChange={(e) => setServerPort(e.target.value)}
+                    className="mt-1"
+                    placeholder="25565"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="botPassword" className="text-sm font-medium text-foreground">
+                  Bot Password (Optional - for AuthMe)
+                </Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="botPassword"
+                    type={showPassword ? "text" : "password"}
+                    value={botPassword}
+                    onChange={(e) => setBotPassword(e.target.value)}
+                    placeholder="Enter bot password for AuthMe"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Required only if your server uses AuthMe plugin
+                </p>
               </div>
 
               <div>
@@ -151,13 +248,31 @@ export default function BotControl() {
                     Connect Bot
                   </Button>
                 ) : (
-                  <Button 
-                    onClick={handleDisconnect}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Disconnect
-                  </Button>
+                  <div className="flex gap-2 w-full">
+                    {!isRunning ? (
+                      <Button 
+                        onClick={handleStartBot}
+                        className="flex-1 gradient-gaming glow-primary"
+                      >
+                        Start Bot
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleStopBot}
+                        variant="outline"
+                        className="flex-1 border-error text-error hover:bg-error hover:text-white"
+                      >
+                        Stop Bot
+                      </Button>
+                    )}
+                    <Button 
+                      onClick={handleDisconnect}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -176,8 +291,8 @@ export default function BotControl() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Connection</span>
-                    <span className={`text-sm font-medium ${isConnected ? "text-success" : "text-error"}`}>
-                      {isConnected ? "Active" : "Inactive"}
+                    <span className={`text-sm font-medium ${isRunning ? "text-success" : isConnected ? "text-warning" : "text-error"}`}>
+                      {isRunning ? "Running" : isConnected ? "Connected" : "Inactive"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">

@@ -8,7 +8,8 @@ import {
   FileText, 
   Package,
   Activity,
-  Shield
+  Shield,
+  HelpCircle
 } from "lucide-react";
 
 const navigation = [
@@ -18,6 +19,7 @@ const navigation = [
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Logs", href: "/logs", icon: FileText },
   { name: "Settings", href: "/settings", icon: Settings },
+  { name: "How to Use", href: "/how-to-use", icon: HelpCircle },
 ];
 
 export default function Sidebar() {
