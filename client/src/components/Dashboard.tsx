@@ -7,13 +7,14 @@ import ServerInfo from "./ServerInfo";
 import PlayerList from "./PlayerList";
 import InventoryDisplay from "./InventoryDisplay";
 import StatsPanel from "./StatsPanel";
+import ServerConfig from "./ServerConfig";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Settings, Monitor } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { socketManager } from "@/lib/socket";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { BotStatus as BotStatusType, ChatMessage, Player, InventoryItem, ServerInfo as ServerInfoType, BotStats } from "@shared/schema";
+import type { BotStatus as BotStatusType, ChatMessage, Player, InventoryItem, ServerInfo as ServerInfoType, BotStats, BotConfig } from "@shared/schema";
 
 export default function Dashboard() {
   const { theme, setTheme } = useTheme();
@@ -41,6 +42,7 @@ export default function Dashboard() {
     uptimePercentage: 0,
     interactionsToday: 0
   });
+  const [currentConfig, setCurrentConfig] = useState<BotConfig | null>(null);
 
   // Fetch initial data using default authenticated fetcher
   const { data: initialStatus } = useQuery({
@@ -51,6 +53,10 @@ export default function Dashboard() {
   const { data: initialStats } = useQuery({
     queryKey: ['/api/bot/stats'],
     refetchInterval: 30000, // Update stats every 30 seconds
+  });
+
+  const { data: initialConfigs } = useQuery({
+    queryKey: ['/api/bot/configs'],
   });
 
   const { data: initialChatHistory } = useQuery({
@@ -97,6 +103,33 @@ export default function Dashboard() {
     onError: (error: any) => {
       toast({ 
         title: "Failed to restart bot", 
+        description: error.message || "Unknown error",
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const saveConfigMutation = useMutation({
+    mutationFn: (configData: any) => {
+      if (currentConfig?.id) {
+        return apiRequest('PUT', `/api/bot/configs/${currentConfig.id}`, configData);
+      } else {
+        return apiRequest('POST', '/api/bot/configs', configData);
+      }
+    },
+    onSuccess: async (response) => {
+      const config = await response.json();
+      setCurrentConfig(config);
+      
+      // Set as active config
+      await apiRequest('POST', `/api/bot/configs/${config.id}/activate`);
+      
+      toast({ title: "Server configuration saved successfully" });
+      queryClient.invalidateQueries({ queryKey: ['/api/bot/configs'] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to save configuration", 
         description: error.message || "Unknown error",
         variant: "destructive" 
       });
@@ -187,6 +220,17 @@ export default function Dashboard() {
     }
   }, [initialChatHistory]);
 
+  useEffect(() => {
+    if (initialConfigs && Array.isArray(initialConfigs) && initialConfigs.length > 0) {
+      // Find the most recently created config or first one
+      const configs = initialConfigs as BotConfig[];
+      const latestConfig = configs.sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+      setCurrentConfig(latestConfig);
+    }
+  }, [initialConfigs]);
+
   const handleThemeToggle = () => {
     if (theme === "dark") {
       setTheme("light");
@@ -209,6 +253,10 @@ export default function Dashboard() {
 
   const handleSettings = () => {
     toast({ title: "Settings panel coming soon!" });
+  };
+
+  const handleSaveConfig = (configData: any) => {
+    saveConfigMutation.mutate(configData);
   };
 
   return (
@@ -262,6 +310,12 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
+            <ServerConfig
+              currentConfig={currentConfig}
+              isConnected={botStatus.isConnected}
+              onSave={handleSaveConfig}
+            />
+            
             <BotStatus
               isOnline={botStatus.isConnected}
               health={botStatus.health || 0}

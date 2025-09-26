@@ -9,7 +9,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/bot/configs', async (req, res) => {
     try {
       const configs = await storage.getAllBotConfigs();
-      res.json(configs);
+      const activeConfig = await storage.getActiveBotConfig();
+      const configsWithActive = configs.map(config => ({
+        ...config,
+        isActive: activeConfig?.id === config.id
+      }));
+      res.json(configsWithActive);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch bot configurations' });
     }

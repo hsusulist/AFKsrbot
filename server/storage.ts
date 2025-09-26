@@ -67,6 +67,9 @@ export class MemStorage implements IStorage {
     // If this is the first config, make it active
     if (this.botConfigs.size === 1) {
       this.activeBotConfigId = id;
+    } else if (!this.activeBotConfigId) {
+      // If no active config is set, make this one active
+      this.activeBotConfigId = id;
     }
     
     return config;
