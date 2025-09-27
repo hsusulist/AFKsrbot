@@ -1,7 +1,7 @@
 {
   "discordConfig": {
     "id": "discord_bot",
-    "token": "test_fake_token_will_fail",
+    "token": "112",
     "isConnected": false,
     "autoStart": false,
     "logCommands": false,
@@ -200,6 +200,13 @@
     {
       "id": "17589672193791uyler10d",
       "timestamp": "2025-09-27T10:00:19.379Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: An invalid token was provided."
+    },
+    {
+      "id": "1758968278315e1bojbxas",
+      "timestamp": "2025-09-27T10:17:58.315Z",
       "type": "discord",
       "level": "error",
       "message": "Failed to connect Discord bot: An invalid token was provided."
