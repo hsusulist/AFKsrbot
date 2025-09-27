@@ -11,10 +11,10 @@
     "autoReconnect": true,
     "mode24_7": true,
     "useWhitelist": false,
-    "isConnected": true,
+    "isConnected": false,
     "ping": "0ms",
     "uptime": "0m",
-    "playersOnline": "3/100",
+    "playersOnline": "2/100",
     "lastConnected": "2025-09-27T07:35:20.607Z"
   },
   "botStatus": {
@@ -27,60 +27,18 @@
   "consoleCommands": [],
   "logs": [
     {
-      "id": "1758958423123ordz0b8f2",
-      "timestamp": "2025-09-27T07:33:43.123Z",
+      "id": "17589585805171whfan5zm",
+      "timestamp": "2025-09-27T07:36:20.517Z",
       "type": "minecraft",
       "level": "info",
       "message": "🔄 Auto-reconnecting in 10 seconds..."
     },
     {
-      "id": "1758958433133nlq1hbodi",
-      "timestamp": "2025-09-27T07:33:53.133Z",
+      "id": "1758958590519eky74jeoj",
+      "timestamp": "2025-09-27T07:36:30.519Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
-    },
-    {
-      "id": "17589585205904de6rwasp",
-      "timestamp": "2025-09-27T07:35:20.590Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "<PvPManager> Welcome! You are protected against PvP for 5 minutes"
-    },
-    {
-      "id": "17589585205928rjiq67v5",
-      "timestamp": "2025-09-27T07:35:20.592Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🟢 test joined the server"
-    },
-    {
-      "id": "17589585205926jyecs05m",
-      "timestamp": "2025-09-27T07:35:20.592Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🟢 hsusulist joined the server"
-    },
-    {
-      "id": "17589585205920xt015k2v",
-      "timestamp": "2025-09-27T07:35:20.592Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🟢 M_I_C_K_Y608 joined the server"
-    },
-    {
-      "id": "17589585206065zkmief74",
-      "timestamp": "2025-09-27T07:35:20.606Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🎮 Minecraft bot spawned as test"
-    },
-    {
-      "id": "17589585256073jos3ayhq",
-      "timestamp": "2025-09-27T07:35:25.607Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🤖 Anti-AFK behaviors activated"
     }
   ],
   "inventory": []
