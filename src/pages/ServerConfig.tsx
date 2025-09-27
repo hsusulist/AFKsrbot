@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,41 +22,133 @@ import {
 export default function ServerConfig() {
   const [serverIP, setServerIP] = useState("127.0.0.1");
   const [serverPort, setServerPort] = useState("25565");
+  const [username, setUsername] = useState("");
   const [botPassword, setBotPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [shouldRegister, setShouldRegister] = useState(false);
   const [useWhitelist, setUseWhitelist] = useState(false);
   const [autoReconnect, setAutoReconnect] = useState(true);
-  const [isConnected, setIsConnected] = useState(false);
+  const [version, setVersion] = useState("1.20.4");
+  const [platform, setPlatform] = useState("java");
   const { toast } = useToast();
 
-  const handleConnect = () => {
-    if (!serverIP.trim() || !serverPort.trim()) {
+  // Get current config
+  const { data: config, isLoading } = useQuery({
+    queryKey: ['/api/minecraft/config'],
+  });
+
+  // Type the config
+  const typedConfig = config as {
+    serverIP?: string;
+    serverPort?: string;
+    username?: string;
+    password?: string;
+    shouldRegister?: boolean;
+    useWhitelist?: boolean;
+    autoReconnect?: boolean;
+    version?: string;
+    platform?: string;
+    isConnected?: boolean;
+    ping?: string;
+    uptime?: string;
+    playersOnline?: string;
+  } | undefined;
+
+  // Update state when config loads
+  useEffect(() => {
+    if (typedConfig) {
+      setServerIP(typedConfig.serverIP || "127.0.0.1");
+      setServerPort(typedConfig.serverPort || "25565");
+      setUsername(typedConfig.username || "");
+      setBotPassword(typedConfig.password || "");
+      setShouldRegister(typedConfig.shouldRegister || false);
+      setUseWhitelist(typedConfig.useWhitelist || false);
+      setAutoReconnect(typedConfig.autoReconnect !== undefined ? typedConfig.autoReconnect : true);
+      setVersion(typedConfig.version || "1.20.4");
+      setPlatform(typedConfig.platform || "java");
+    }
+  }, [typedConfig]);
+
+  // Connect mutation
+  const connectMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/minecraft/connect', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Connected to Minecraft server successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/minecraft/config'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Failed to connect to Minecraft server",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Disconnect mutation
+  const disconnectMutation = useMutation({
+    mutationFn: () => apiRequest('/api/minecraft/disconnect', {
+      method: 'POST',
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Disconnected from Minecraft server",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/minecraft/config'] });
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Please enter valid server IP and port",
+        description: error.message || "Failed to disconnect",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const isConnected = typedConfig?.isConnected || false;
+
+  const handleConnect = () => {
+    if (!serverIP.trim() || !serverPort.trim() || !username.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter server IP, port, and username",
         variant: "destructive"
       });
       return;
     }
 
-    // Simulate connection
-    setTimeout(() => {
-      setIsConnected(true);
+    if (botPassword && botPassword.length < 4) {
       toast({
-        title: "Success",
-        description: "Connected to server successfully!",
-        variant: "default"
+        title: "Error", 
+        description: "Password must be at least 4 characters long",
+        variant: "destructive"
       });
-    }, 1000);
+      return;
+    }
+
+    connectMutation.mutate({
+      serverIP,
+      serverPort,
+      username,
+      password: botPassword || undefined,
+      shouldRegister,
+      version,
+      platform,
+      autoReconnect,
+      useWhitelist,
+      mode24_7: true,
+    });
   };
 
   const handleDisconnect = () => {
-    setIsConnected(false);
-    toast({
-      title: "Disconnected",
-      description: "Disconnected from server",
-      variant: "default"
-    });
+    disconnectMutation.mutate();
   };
 
   return (
@@ -126,6 +220,23 @@ export default function ServerConfig() {
               </div>
 
               <div>
+                <Label htmlFor="username" className="text-sm font-medium text-foreground">
+                  Bot Username
+                </Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-1"
+                  placeholder="Enter bot username"
+                  data-testid="input-username"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Username for the bot to join the server
+                </p>
+              </div>
+
+              <div>
                 <Label htmlFor="botPassword" className="text-sm font-medium text-foreground">
                   Bot Password (Optional)
                 </Label>
@@ -147,8 +258,25 @@ export default function ServerConfig() {
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Leave empty if no password is required
+                  {botPassword && botPassword.length > 0 && botPassword.length < 4 ? 
+                    "Password must be at least 4 characters long" :
+                    "Leave empty if no password is required (minimum 4 characters if used)"
+                  }
                 </p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium text-foreground">Register Account</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {shouldRegister ? "Bot will register with password" : "Bot will login with password"}
+                  </p>
+                </div>
+                <Switch
+                  checked={shouldRegister}
+                  onCheckedChange={setShouldRegister}
+                  data-testid="switch-register"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -156,8 +284,9 @@ export default function ServerConfig() {
                   <Label htmlFor="version">Minecraft Version</Label>
                   <select 
                     id="version"
+                    value={version}
+                    onChange={(e) => setVersion(e.target.value)}
                     className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md text-sm"
-                    defaultValue="1.20.4"
                   >
                     <option value="1.20.4">1.20.4</option>
                     <option value="1.20.1">1.20.1</option>
@@ -170,8 +299,9 @@ export default function ServerConfig() {
                   <Label htmlFor="platform">Platform</Label>
                   <select 
                     id="platform"
+                    value={platform}
+                    onChange={(e) => setPlatform(e.target.value)}
                     className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md text-sm"
-                    defaultValue="java"
                   >
                     <option value="java">Java Edition</option>
                     <option value="bedrock">Bedrock Edition</option>
