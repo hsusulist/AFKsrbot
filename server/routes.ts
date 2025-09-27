@@ -47,6 +47,7 @@ export function createRoutes(storage: IStorage) {
         commandsExecuted: config.commandsExecuted,
         uptime: config.uptime,
         lastConnected: config.lastConnected,
+        hasToken: !!config.token, // Show that token exists without revealing it
       };
       
       res.json(safeConfig);

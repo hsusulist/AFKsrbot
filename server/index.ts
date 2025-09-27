@@ -2,13 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { createRoutes } from './routes';
-import { MemStorage } from './storage';
+import { FileStorage } from './storage.file';
 
 const app = express();
 const port = process.env.PORT || 3001;
 
 // Initialize storage
-const storage = new MemStorage();
+const storage = new FileStorage();
 
 async function startServer() {
   try {

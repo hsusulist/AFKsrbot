@@ -1,0 +1,13 @@
+{
+  "discordConfig": null,
+  "minecraftConfig": null,
+  "botStatus": {
+    "id": "bot_status",
+    "discordConnected": false,
+    "minecraftConnected": false,
+    "totalUptime": "0m"
+  },
+  "consoleCommands": [],
+  "logs": [],
+  "inventory": []
+}
