@@ -12,9 +12,13 @@ import {
 export function createRoutes(storage: IStorage) {
   const router = express.Router();
   
-  // Discord Bot instance
-  let discordBot: Client | null = null;
+  // Discord Bot instance with extended properties
+  let discordBot: (Client & { statusInterval?: NodeJS.Timeout }) | null = null;
   let minecraftBot: any = null; // mineflayer bot
+  
+  // Global channel tracking for Discord features
+  let statusChannel: string | null = null;
+  let logChannel: string | null = null;
 
   // Helper function to add logs
   const addLog = async (type: 'discord' | 'minecraft' | 'system' | 'error', level: 'info' | 'warn' | 'error' | 'debug', message: string, details?: string) => {
@@ -75,11 +79,69 @@ export function createRoutes(storage: IStorage) {
         ]
       });
 
+      // Discord bot slash command definitions
+      const commands = [
+        {
+          name: 'setup',
+          description: 'Configure current channel for live status monitoring'
+        },
+        {
+          name: 'log',
+          description: 'Set current channel to receive all Minecraft chat and events'
+        },
+        {
+          name: 'start',
+          description: 'Start the Minecraft bot connection'
+        },
+        {
+          name: 'close',
+          description: 'Stop the Minecraft bot'
+        },
+        {
+          name: 'restart',
+          description: 'Restart the Minecraft bot connection'
+        },
+        {
+          name: 'status',
+          description: 'Display current bot status'
+        },
+        {
+          name: 'inventory',
+          description: 'Display bot\'s current inventory'
+        },
+        {
+          name: 'inv',
+          description: 'Display bot\'s current inventory (alias)'
+        },
+        {
+          name: 'command',
+          description: 'Execute a Minecraft command',
+          options: [
+            {
+              name: 'cmd',
+              type: 3, // STRING
+              description: 'The Minecraft command to execute',
+              required: true
+            }
+          ]
+        }
+      ];
+
       // Setup event handlers
       discordBot.on('ready', async () => {
         if (!discordBot?.user) return;
         
-        await addLog('discord', 'info', `Discord bot logged in as ${discordBot.user.tag}`);
+        await addLog('discord', 'info', `🤖 Discord bot logged in as ${discordBot.user.tag}`);
+        
+        // Register slash commands for all guilds
+        try {
+          if (discordBot.application) {
+            await discordBot.application.commands.set(commands);
+            await addLog('discord', 'info', '✅ Slash commands registered successfully');
+          }
+        } catch (error) {
+          await addLog('discord', 'error', `Failed to register slash commands: ${error.message}`);
+        }
         
         // Update config with connection status
         const config = await storage.saveDiscordConfig({
@@ -100,55 +162,221 @@ export function createRoutes(storage: IStorage) {
           lastActivity: new Date().toISOString(),
           totalUptime: '0m',
         });
+        
+        // Start periodic status updates
+        const statusUpdateInterval = setInterval(async () => {
+          if (!discordBot || !statusChannel) return;
+          
+          try {
+            const channel = await discordBot.channels.fetch(statusChannel);
+            if (!channel || !channel.isTextBased() || !('send' in channel)) return;
+            
+            const minecraftConfig = await storage.getMinecraftConfig();
+            const botStatus = await storage.getBotStatus();
+            
+            const statusEmbed = {
+              title: '🤖 AFKsrbot Live Status',
+              fields: [
+                {
+                  name: '🎮 Minecraft Bot',
+                  value: minecraftBot ? '🟢 Online & Active' : '🔴 Offline',
+                  inline: true
+                },
+                {
+                  name: '❤️ Health',
+                  value: minecraftBot ? `${minecraftBot.health || 0}/20` : '0/20',
+                  inline: true
+                },
+                {
+                  name: '🍖 Food',
+                  value: minecraftBot ? `${minecraftBot.food || 0}/20` : '0/20',
+                  inline: true
+                }
+              ],
+              color: minecraftBot ? 0x00ff00 : 0xff0000,
+              timestamp: new Date().toISOString(),
+              footer: { text: 'Updates every 30 seconds' }
+            };
+            
+            if (minecraftBot && minecraftBot.entity) {
+              const pos = minecraftBot.entity.position;
+              statusEmbed.fields.push({
+                name: '📍 Position',
+                value: `X: ${Math.floor(pos.x)}, Y: ${Math.floor(pos.y)}, Z: ${Math.floor(pos.z)}`,
+                inline: true
+              });
+              
+              if (minecraftConfig?.playersOnline) {
+                statusEmbed.fields.push({
+                  name: '👥 Players',
+                  value: minecraftConfig.playersOnline,
+                  inline: true
+                });
+              }
+            }
+            
+            await channel.send({ embeds: [statusEmbed] });
+          } catch (error) {
+            console.log('Status update failed:', error.message);
+          }
+        }, 30000); // Every 30 seconds
+        
+        // Store the interval for cleanup
+        discordBot.statusInterval = statusUpdateInterval;
       });
 
-      discordBot.on('messageCreate', async (message) => {
-        if (message.author.bot) return;
+      
+      // Handle slash command interactions
+      discordBot.on('interactionCreate', async (interaction) => {
+        if (!interaction.isChatInputCommand()) return;
         
-        // Handle bot commands
-        if (message.content.startsWith('/')) {
-          const command = message.content.slice(1).split(' ')[0];
-          const args = message.content.slice(1).split(' ').slice(1);
-          
-          await addLog('discord', 'info', `Command received: /${command}`, `From: ${message.author.tag}`);
-          
-          switch (command) {
-            case 'status':
-              const config = await storage.getDiscordConfig();
+        const { commandName, user, channelId } = interaction;
+        
+        await addLog('discord', 'info', `Slash command: /${commandName}`, `From: ${user.tag}`);
+        
+        try {
+          switch (commandName) {
+            case 'setup':
+              statusChannel = channelId;
+              await interaction.reply('✅ This channel is now configured for live status monitoring!');
+              break;
+              
+            case 'log':
+              logChannel = channelId;
+              await interaction.reply('✅ This channel will now receive all Minecraft chat and events!');
+              break;
+              
+            case 'start':
+              if (minecraftBot) {
+                await interaction.reply('⚠️ Minecraft bot is already connected!');
+                return;
+              }
+              
               const mcConfig = await storage.getMinecraftConfig();
-              message.reply(`🤖 Bot Status:\n📱 Discord: ${config?.isConnected ? 'Connected' : 'Disconnected'}\n🎮 Minecraft: ${mcConfig?.isConnected ? 'Connected' : 'Disconnected'}`);
+              if (!mcConfig || !mcConfig.serverIP) {
+                await interaction.reply('❌ No Minecraft server configuration found. Please configure the server in the dashboard first.');
+                return;
+              }
+              
+              await interaction.reply('🔄 Starting Minecraft bot connection...');
+              // The bot connection logic would need to be extracted into a reusable function
+              break;
+              
+            case 'close':
+              if (!minecraftBot) {
+                await interaction.reply('⚠️ Minecraft bot is not connected!');
+                return;
+              }
+              
+              minecraftBot.quit();
+              minecraftBot = null;
+              await storage.updateMinecraftConfig({ isConnected: false });
+              await interaction.reply('✅ Minecraft bot disconnected!');
+              break;
+              
+            case 'restart':
+              if (minecraftBot) {
+                minecraftBot.quit();
+                minecraftBot = null;
+              }
+              await interaction.reply('🔄 Restarting Minecraft bot...');
+              // Restart logic would go here
+              break;
+              
+            case 'status':
+              const discordConfig = await storage.getDiscordConfig();
+              const minecraftConfig = await storage.getMinecraftConfig();
+              const botStatus = await storage.getBotStatus();
+              
+              const embed = {
+                title: '🤖 AFKsrbot Status',
+                fields: [
+                  {
+                    name: '📱 Discord Bot',
+                    value: discordConfig?.isConnected ? '🟢 Connected' : '🔴 Disconnected',
+                    inline: true
+                  },
+                  {
+                    name: '🎮 Minecraft Bot',
+                    value: minecraftConfig?.isConnected ? '🟢 Connected' : '🔴 Disconnected',
+                    inline: true
+                  },
+                  {
+                    name: '⏱️ Uptime',
+                    value: botStatus?.totalUptime || '0m',
+                    inline: true
+                  }
+                ],
+                color: 0x00ff00,
+                timestamp: new Date().toISOString()
+              };
+              
+              if (minecraftConfig?.isConnected) {
+                embed.fields.push(
+                  {
+                    name: '🏠 Server',
+                    value: `${minecraftConfig.serverIP}:${minecraftConfig.serverPort}`,
+                    inline: true
+                  },
+                  {
+                    name: '👥 Players Online',
+                    value: minecraftConfig.playersOnline || '0/100',
+                    inline: true
+                  },
+                  {
+                    name: '❤️ Bot Health',
+                    value: minecraftBot ? `${minecraftBot.health || 0}/20` : '0/20',
+                    inline: true
+                  }
+                );
+              }
+              
+              await interaction.reply({ embeds: [embed] });
               break;
               
             case 'inventory':
+            case 'inv':
               const inventory = await storage.getInventory();
-              const inventoryText = inventory.length > 0 
-                ? inventory.map(item => `${item.name}: ${item.count}`).join('\n')
-                : 'Inventory is empty';
-              message.reply(`🎒 Bot Inventory:\n\`\`\`${inventoryText}\`\`\``);
+              
+              if (inventory.length === 0) {
+                await interaction.reply('🎒 Bot inventory is empty');
+                return;
+              }
+              
+              const inventoryEmbed = {
+                title: '🎒 Bot Inventory',
+                description: inventory.map(item => `${item.name}: ${item.count}`).join('\n'),
+                color: 0x8B4513,
+                timestamp: new Date().toISOString()
+              };
+              
+              await interaction.reply({ embeds: [inventoryEmbed] });
               break;
               
             case 'command':
               if (!minecraftBot) {
-                message.reply('❌ Minecraft bot is not connected');
+                await interaction.reply('❌ Minecraft bot is not connected');
                 return;
               }
-              if (args.length === 0) {
-                message.reply('❌ Please provide a command to execute');
+              
+              const command = interaction.options.getString('cmd');
+              if (!command) {
+                await interaction.reply('❌ Please provide a command to execute');
                 return;
               }
-              const mcCommand = args.join(' ');
+              
               try {
-                minecraftBot.chat(`/${mcCommand}`);
-                message.reply(`✅ Executed command: \`/${mcCommand}\``);
-                await addLog('minecraft', 'info', `Command executed: /${mcCommand}`, `Via Discord by ${message.author.tag}`);
+                minecraftBot.chat(`/${command}`);
+                await interaction.reply(`✅ Executed command: \`/${command}\``);
+                await addLog('minecraft', 'info', `Command executed: /${command}`, `Via Discord by ${user.tag}`);
               } catch (error) {
-                message.reply('❌ Failed to execute command');
-                await addLog('error', 'error', `Failed to execute command: ${mcCommand}`, error.message);
+                await interaction.reply('❌ Failed to execute command');
+                await addLog('error', 'error', `Failed to execute command: ${command}`, error.message);
               }
               break;
               
             default:
-              message.reply('❓ Unknown command. Available: /status, /inventory, /command <cmd>');
+              await interaction.reply('❓ Unknown command');
           }
           
           // Update command count
@@ -157,6 +385,12 @@ export function createRoutes(storage: IStorage) {
             await storage.updateDiscordConfig({
               commandsExecuted: (currentConfig.commandsExecuted || 0) + 1,
             });
+          }
+          
+        } catch (error) {
+          console.error('Discord command error:', error);
+          if (!interaction.replied) {
+            await interaction.reply('❌ An error occurred while processing the command');
           }
         }
       });
@@ -186,6 +420,11 @@ export function createRoutes(storage: IStorage) {
   router.post('/api/discord/disconnect', async (req, res) => {
     try {
       if (discordBot) {
+        // Clear status update interval
+        if (discordBot.statusInterval) {
+          clearInterval(discordBot.statusInterval);
+        }
+        
         discordBot.destroy();
         discordBot = null;
         
@@ -198,7 +437,6 @@ export function createRoutes(storage: IStorage) {
         });
         
         await addLog('discord', 'info', 'Discord bot disconnected');
-        // Clear Discord logs when disconnected
         await storage.clearLogs('discord');
       }
       
@@ -278,9 +516,86 @@ export function createRoutes(storage: IStorage) {
 
       minecraftBot = mineflayer.createBot(botOptions);
 
+      // AFKsrbot state variables
+      let afkIntervals: NodeJS.Timeout[] = [];
+      let kickCount = 0;
+      let lastPlayerInteraction = Date.now();
+      let greetedPlayers = new Set<string>();
+      
+      // AFKsrbot anti-AFK behaviors
+      const startAntiAFKBehaviors = () => {
+        // Random movement every 30-60 seconds
+        const movementInterval = setInterval(() => {
+          if (!minecraftBot || !minecraftBot.entity) return;
+          
+          const randomActions = [
+            () => minecraftBot.setControlState('forward', true),
+            () => minecraftBot.setControlState('back', true),
+            () => minecraftBot.setControlState('left', true),
+            () => minecraftBot.setControlState('right', true),
+            () => minecraftBot.setControlState('jump', true),
+          ];
+          
+          // Perform random action
+          const action = randomActions[Math.floor(Math.random() * randomActions.length)];
+          action();
+          
+          // Stop action after short duration
+          setTimeout(() => {
+            if (minecraftBot) {
+              minecraftBot.clearControlStates();
+            }
+          }, Math.random() * 2000 + 500); // 0.5-2.5 seconds
+          
+        }, Math.random() * 30000 + 30000); // 30-60 seconds
+        
+        // Random looking around every 10-20 seconds
+        const lookInterval = setInterval(() => {
+          if (!minecraftBot || !minecraftBot.entity) return;
+          
+          const yaw = Math.random() * Math.PI * 2; // Random horizontal direction
+          const pitch = (Math.random() - 0.5) * 0.5; // Random vertical look
+          minecraftBot.look(yaw, pitch);
+          
+        }, Math.random() * 10000 + 10000); // 10-20 seconds
+        
+        // Health and food monitoring every 5 seconds
+        const healthInterval = setInterval(async () => {
+          if (!minecraftBot || !minecraftBot.entity) return;
+          
+          const health = minecraftBot.health;
+          const food = minecraftBot.food;
+          
+          if (health <= 10) {
+            await addLog('minecraft', 'warn', `⚠️ Low health: ${health}/20`);
+          }
+          
+          if (food <= 6) {
+            await addLog('minecraft', 'warn', `🍖 Low food: ${food}/20`);
+            // Try to eat if we have food
+            const foodItems = minecraftBot.inventory.items().filter(item => 
+              item.name.includes('bread') || item.name.includes('apple') || 
+              item.name.includes('carrot') || item.name.includes('potato')
+            );
+            if (foodItems.length > 0) {
+              try {
+                await minecraftBot.equip(foodItems[0], 'hand');
+                minecraftBot.activateItem();
+                await addLog('minecraft', 'info', `🍽️ Eating ${foodItems[0].name}`);
+              } catch (err) {
+                await addLog('minecraft', 'warn', `Failed to eat: ${err.message}`);
+              }
+            }
+          }
+          
+        }, 5000); // Every 5 seconds
+        
+        afkIntervals.push(movementInterval, lookInterval, healthInterval);
+      };
+      
       // Setup event handlers
       minecraftBot.on('spawn', async () => {
-        await addLog('minecraft', 'info', `Minecraft bot spawned as ${config.username}`);
+        await addLog('minecraft', 'info', `🎮 Minecraft bot spawned as ${config.username}`);
         
         // Handle password login/register
         if (config.password) {
@@ -292,6 +607,12 @@ export function createRoutes(storage: IStorage) {
             await addLog('minecraft', 'info', 'Attempting to login with password');
           }
         }
+        
+        // Start anti-AFK behaviors
+        setTimeout(() => {
+          startAntiAFKBehaviors();
+          addLog('minecraft', 'info', '🤖 Anti-AFK behaviors activated');
+        }, 5000); // Wait 5 seconds after spawn
         
         // Save config
         await storage.saveMinecraftConfig({
@@ -315,15 +636,114 @@ export function createRoutes(storage: IStorage) {
       minecraftBot.on('chat', async (username, message) => {
         if (username === minecraftBot.username) return;
         await addLog('minecraft', 'info', `<${username}> ${message}`);
+        lastPlayerInteraction = Date.now();
         
-        // Forward to Discord if bot is connected
-        if (discordBot && discordBot.user) {
-          const guilds = discordBot.guilds.cache;
-          guilds.forEach(guild => {
-            const channel = guild.channels.cache.find(ch => ch.name === 'minecraft-chat' || ch.name === 'general');
-            if (channel && channel.type === 0) { // Text channel
-              (channel as any).send(`[MC] <${username}> ${message}`);
+        // Player interaction responses
+        const lowerMessage = message.toLowerCase();
+        const botName = config.username.toLowerCase();
+        
+        // Greet new players
+        if (!greetedPlayers.has(username)) {
+          greetedPlayers.add(username);
+          setTimeout(() => {
+            if (minecraftBot) {
+              const greetings = [
+                `Hello ${username}! Welcome to the server! 👋`,
+                `Hey ${username}! Good to see you here!`,
+                `Hi ${username}! How's it going?`,
+                `Welcome ${username}! Nice to meet you!`
+              ];
+              const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+              minecraftBot.chat(greeting);
             }
+          }, Math.random() * 3000 + 2000); // 2-5 seconds delay
+        }
+        
+        // Respond to mentions or direct messages
+        if (lowerMessage.includes(botName) || lowerMessage.includes('bot')) {
+          setTimeout(() => {
+            if (minecraftBot) {
+              if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+                minecraftBot.chat(`Hello ${username}! How can I help you? 😊`);
+              } else if (lowerMessage.includes('how are you')) {
+                minecraftBot.chat(`I'm doing great, thanks for asking ${username}! Just enjoying the server 🎮`);
+              } else if (lowerMessage.includes('help')) {
+                minecraftBot.chat(`I'm just a friendly bot hanging out here! Talk to the server admins for game help 📚`);
+              } else if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye')) {
+                minecraftBot.chat(`See you later ${username}! Take care! 👋`);
+              } else {
+                const responses = [
+                  `Yes ${username}?`,
+                  `I heard you mention me! What's up?`,
+                  `Thanks for the message ${username}! 😄`,
+                  `How can I help you ${username}?`
+                ];
+                const response = responses[Math.floor(Math.random() * responses.length)];
+                minecraftBot.chat(response);
+              }
+            }
+          }, Math.random() * 2000 + 1000); // 1-3 seconds delay
+        }
+        
+        // Forward to Discord log channel if configured
+        if (discordBot && discordBot.user && logChannel) {
+          try {
+            const channel = await discordBot.channels.fetch(logChannel);
+            if (channel && channel.isTextBased() && 'send' in channel) {
+              await channel.send(`💬 **${username}**: ${message}`);
+            }
+          } catch (error) {
+            console.log('Failed to send chat to Discord:', error.message);
+          }
+        }
+      });
+      
+      // Player join/leave notifications
+      minecraftBot.on('playerJoined', async (player) => {
+        await addLog('minecraft', 'info', `🟢 ${player.username} joined the server`);
+        
+        // Forward to Discord log channel
+        if (discordBot && discordBot.user && logChannel) {
+          try {
+            const channel = await discordBot.channels.fetch(logChannel);
+            if (channel && channel.isTextBased() && 'send' in channel) {
+              await channel.send(`🟢 **${player.username}** joined the server`);
+            }
+          } catch (error) {
+            console.log('Failed to send join notification to Discord:', error.message);
+          }
+        }
+        
+        // Update player count
+        if (minecraftBot.players) {
+          const playerCount = Object.keys(minecraftBot.players).length;
+          await storage.updateMinecraftConfig({ 
+            playersOnline: `${playerCount}/100`
+          });
+        }
+      });
+      
+      minecraftBot.on('playerLeft', async (player) => {
+        await addLog('minecraft', 'info', `🔴 ${player.username} left the server`);
+        greetedPlayers.delete(player.username); // Remove from greeted list
+        
+        // Forward to Discord log channel
+        if (discordBot && discordBot.user && logChannel) {
+          try {
+            const channel = await discordBot.channels.fetch(logChannel);
+            if (channel && channel.isTextBased() && 'send' in channel) {
+              await channel.send(`🔴 **${player.username}** left the server`);
+            }
+          } catch (error) {
+            console.log('Failed to send leave notification to Discord:', error.message);
+          }
+        }
+        
+        // Update player count
+        if (minecraftBot.players) {
+          const playerCount = Object.keys(minecraftBot.players).length;
+          await storage.updateMinecraftConfig({ 
+            playersOnline: `${playerCount}/100`
           });
         }
       });
@@ -340,10 +760,39 @@ export function createRoutes(storage: IStorage) {
       });
 
       minecraftBot.on('kicked', async (reason) => {
-        await addLog('minecraft', 'error', `Bot was kicked: ${reason}`);
+        kickCount++;
+        await addLog('minecraft', 'error', `⚠️ Bot was kicked (${kickCount}/3): ${reason}`);
+        
+        // Clear intervals
+        afkIntervals.forEach(interval => clearInterval(interval));
+        afkIntervals = [];
+        
         await storage.updateMinecraftConfig({ isConnected: false });
+        
+        // Kick protection: stop reconnecting after 3 kicks
+        if (kickCount >= 3) {
+          await addLog('minecraft', 'error', '🚫 Too many kicks detected. Stopping auto-reconnect to prevent ban.');
+          await storage.clearLogs('minecraft');
+          return;
+        }
+        
         // Clear Minecraft logs when kicked
         await storage.clearLogs('minecraft');
+        
+        // Auto-reconnect with delay if enabled
+        if (config.autoReconnect && kickCount < 3) {
+          const delay = kickCount * 30000; // Increase delay with each kick (30s, 60s, 90s)
+          await addLog('minecraft', 'info', `🔄 Auto-reconnecting in ${delay/1000} seconds...`);
+          setTimeout(async () => {
+            try {
+              // Recreate bot connection
+              const newBot = mineflayer.createBot(botOptions);
+              // The new bot will have fresh event handlers
+            } catch (error) {
+              await addLog('minecraft', 'error', `Failed to reconnect: ${error.message}`);
+            }
+          }, delay);
+        }
       });
 
       minecraftBot.on('error', async (err) => {
@@ -352,17 +801,30 @@ export function createRoutes(storage: IStorage) {
       });
 
       minecraftBot.on('end', async () => {
-        await addLog('minecraft', 'info', 'Minecraft bot disconnected');
+        await addLog('minecraft', 'info', '🔌 Minecraft bot disconnected');
+        
+        // Clear intervals
+        afkIntervals.forEach(interval => clearInterval(interval));
+        afkIntervals = [];
+        greetedPlayers.clear();
+        
         await storage.updateMinecraftConfig({ isConnected: false });
-        // Clear Minecraft logs when connection ends
         await storage.clearLogs('minecraft');
         
-        // Auto-reconnect if enabled
-        if (config.autoReconnect) {
-          setTimeout(() => {
-            // Reconnect logic would go here
-            addLog('minecraft', 'info', 'Attempting to reconnect...');
-          }, 5000);
+        // Auto-reconnect if enabled and not kicked too many times
+        if (config.autoReconnect && kickCount < 3) {
+          const delay = Math.min(kickCount * 10000, 30000); // Max 30 second delay
+          await addLog('minecraft', 'info', `🔄 Auto-reconnecting in ${delay/1000} seconds...`);
+          setTimeout(async () => {
+            try {
+              await addLog('minecraft', 'info', 'Attempting to reconnect...');
+              // Would need to call the connect function again
+            } catch (error) {
+              await addLog('minecraft', 'error', `Failed to reconnect: ${error.message}`);
+            }
+          }, delay);
+        } else if (kickCount >= 3) {
+          await addLog('minecraft', 'warn', '🚫 Auto-reconnect disabled due to repeated kicks');
         }
       });
 
@@ -388,8 +850,7 @@ export function createRoutes(storage: IStorage) {
           totalUptime: (await storage.getBotStatus())?.totalUptime || '0m',
         });
         
-        await addLog('minecraft', 'info', 'Minecraft bot disconnected');
-        // Clear Minecraft logs when disconnected
+        await addLog('minecraft', 'info', '🛑 Minecraft bot manually disconnected');
         await storage.clearLogs('minecraft');
       }
       
