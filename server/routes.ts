@@ -164,6 +164,12 @@ export function createRoutes(storage: IStorage) {
       discordBot.on('error', async (error) => {
         await addLog('discord', 'error', `Discord bot error: ${error.message}`);
         console.error('Discord bot error:', error);
+        
+        // If it's a critical error, clear logs and disconnect
+        if (error.message.includes('TOKEN') || error.message.includes('INVALID') || error.message.includes('UNAUTHORIZED')) {
+          await storage.updateDiscordConfig({ isConnected: false });
+          await storage.clearLogs('discord');
+        }
       });
 
       // Login to Discord
@@ -192,6 +198,8 @@ export function createRoutes(storage: IStorage) {
         });
         
         await addLog('discord', 'info', 'Discord bot disconnected');
+        // Clear Discord logs when disconnected
+        await storage.clearLogs('discord');
       }
       
       res.json({ success: true, message: 'Discord bot disconnected' });
@@ -334,6 +342,8 @@ export function createRoutes(storage: IStorage) {
       minecraftBot.on('kicked', async (reason) => {
         await addLog('minecraft', 'error', `Bot was kicked: ${reason}`);
         await storage.updateMinecraftConfig({ isConnected: false });
+        // Clear Minecraft logs when kicked
+        await storage.clearLogs('minecraft');
       });
 
       minecraftBot.on('error', async (err) => {
@@ -344,6 +354,8 @@ export function createRoutes(storage: IStorage) {
       minecraftBot.on('end', async () => {
         await addLog('minecraft', 'info', 'Minecraft bot disconnected');
         await storage.updateMinecraftConfig({ isConnected: false });
+        // Clear Minecraft logs when connection ends
+        await storage.clearLogs('minecraft');
         
         // Auto-reconnect if enabled
         if (config.autoReconnect) {
@@ -377,6 +389,8 @@ export function createRoutes(storage: IStorage) {
         });
         
         await addLog('minecraft', 'info', 'Minecraft bot disconnected');
+        // Clear Minecraft logs when disconnected
+        await storage.clearLogs('minecraft');
       }
       
       res.json({ success: true, message: 'Minecraft bot disconnected' });
