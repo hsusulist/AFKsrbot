@@ -8,12 +8,13 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
     port: 5000,
-    hmr: {
-      port: 5000,
-    },
+    hmr: false,
     allowedHosts: true,
     headers: {
       'Cache-Control': 'no-cache',
+    },
+    proxy: {
+      '/api': 'http://localhost:3001'
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),

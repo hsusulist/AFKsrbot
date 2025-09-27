@@ -15,7 +15,10 @@ async function startServer() {
     await storage.init();
     
     // Middleware
-    app.use(cors());
+    const corsOptions = process.env.NODE_ENV === 'production' 
+      ? { origin: [process.env.REPLIT_DOMAIN || 'http://localhost:5000'] }
+      : { origin: ['http://localhost:5000', 'http://0.0.0.0:5000'] };
+    app.use(cors(corsOptions));
     app.use(express.json());
 
     // API routes
@@ -32,8 +35,8 @@ async function startServer() {
       });
     }
 
-    app.listen(port, 'localhost', () => {
-      console.log(`🚀 AFK Bot Dashboard server running on localhost:${port}`);
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`🚀 AFK Bot Dashboard server running on 0.0.0.0:${port}`);
       console.log(`📱 Discord bot ready for connections`);
       console.log(`🎮 Minecraft bot ready for connections`);
     });
