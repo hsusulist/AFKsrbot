@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,27 +7,66 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAutosave } from "@/hooks/useAutosave";
 import { 
   Settings as SettingsIcon, 
   Bell, 
   Shield, 
   Database, 
   Save,
-  RotateCcw
+  RotateCcw,
+  Moon,
+  Sun,
+  Monitor
 } from "lucide-react";
 
+interface SettingsData {
+  dashboardName: string;
+  adminEmail: string;
+  enableNotifications: boolean;
+  enableLogging: boolean;
+  autoBackup: boolean;
+  maxLogEntries: string;
+  welcomeMessage: string;
+}
+
+const defaultSettings: SettingsData = {
+  dashboardName: "AFK Bot Dashboard",
+  adminEmail: "admin@example.com",
+  enableNotifications: true,
+  enableLogging: true,
+  autoBackup: false,
+  maxLogEntries: "1000",
+  welcomeMessage: "Welcome to our server!"
+};
+
 export default function Settings() {
-  const [dashboardName, setDashboardName] = useState("AFK Bot Dashboard");
-  const [adminEmail, setAdminEmail] = useState("admin@example.com");
-  const [enableNotifications, setEnableNotifications] = useState(true);
-  const [enableLogging, setEnableLogging] = useState(true);
-  const [autoBackup, setAutoBackup] = useState(false);
-  const [maxLogEntries, setMaxLogEntries] = useState("1000");
-  const [welcomeMessage, setWelcomeMessage] = useState("Welcome to our server!");
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const { toast } = useToast();
+  
+  // Autosave settings
+  const { data: settings, setData: setSettings, isLoading, lastSaved, reset, save } = useAutosave<SettingsData>(
+    'dashboard-settings',
+    defaultSettings,
+    {
+      debounceMs: 1000,
+      onSave: () => {
+        // Could send to server here if needed
+        console.log('Settings auto-saved');
+      }
+    }
+  );
+
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSave = () => {
+    save();
     toast({
       title: "Settings Saved",
       description: "All settings have been saved successfully.",
@@ -35,20 +75,30 @@ export default function Settings() {
   };
 
   const handleReset = () => {
-    setDashboardName("AFK Bot Dashboard");
-    setAdminEmail("admin@example.com");
-    setEnableNotifications(true);
-    setEnableLogging(true);
-    setAutoBackup(false);
-    setMaxLogEntries("1000");
-    setWelcomeMessage("Welcome to our server!");
-    
+    reset();
     toast({
       title: "Settings Reset",
       description: "All settings have been reset to defaults.",
       variant: "default"
     });
   };
+
+  const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const getThemeIcon = () => {
+    if (!mounted) return <Monitor className="w-4 h-4" />;
+    switch (resolvedTheme) {
+      case 'light': return <Sun className="w-4 h-4" />;
+      case 'dark': return <Moon className="w-4 h-4" />;
+      default: return <Monitor className="w-4 h-4" />;
+    }
+  };
+
+  if (!mounted) {
+    return null; // Avoid hydration mismatch
+  }
 
   return (
     <Layout>
@@ -64,7 +114,7 @@ export default function Settings() {
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset
             </Button>
-            <Button onClick={handleSave} className="gradient-gaming glow-primary">
+            <Button onClick={handleSave} className="gradient-gaming glow-primary transition-all duration-150 ease-out hover:scale-105">
               <Save className="w-4 h-4 mr-2" />
               Save Changes
             </Button>
@@ -81,14 +131,51 @@ export default function Settings() {
             
             <div className="space-y-4">
               <div>
+                <Label htmlFor="theme" className="text-sm font-medium text-foreground">
+                  Theme Preference
+                </Label>
+                <Select value={theme} onValueChange={setTheme}>
+                  <SelectTrigger className="mt-1">
+                    <div className="flex items-center gap-2">
+                      {getThemeIcon()}
+                      <SelectValue placeholder="Select theme" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">
+                      <div className="flex items-center gap-2">
+                        <Sun className="w-4 h-4" />
+                        <span>Light</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="dark">
+                      <div className="flex items-center gap-2">
+                        <Moon className="w-4 h-4" />
+                        <span>Dark</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="system">
+                      <div className="flex items-center gap-2">
+                        <Monitor className="w-4 h-4" />
+                        <span>System</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Choose your preferred color scheme
+                </p>
+              </div>
+
+              <div>
                 <Label htmlFor="dashboardName" className="text-sm font-medium text-foreground">
                   Dashboard Name
                 </Label>
                 <Input
                   id="dashboardName"
-                  value={dashboardName}
-                  onChange={(e) => setDashboardName(e.target.value)}
-                  className="mt-1"
+                  value={settings.dashboardName}
+                  onChange={(e) => updateSetting('dashboardName', e.target.value)}
+                  className="mt-1 transition-all duration-150 ease-out"
                   placeholder="Enter dashboard name"
                 />
               </div>
@@ -100,9 +187,9 @@ export default function Settings() {
                 <Input
                   id="adminEmail"
                   type="email"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  className="mt-1"
+                  value={settings.adminEmail}
+                  onChange={(e) => updateSetting('adminEmail', e.target.value)}
+                  className="mt-1 transition-all duration-150 ease-out"
                   placeholder="admin@example.com"
                 />
               </div>
@@ -113,9 +200,9 @@ export default function Settings() {
                 </Label>
                 <Textarea
                   id="welcomeMessage"
-                  value={welcomeMessage}
-                  onChange={(e) => setWelcomeMessage(e.target.value)}
-                  className="mt-1"
+                  value={settings.welcomeMessage}
+                  onChange={(e) => updateSetting('welcomeMessage', e.target.value)}
+                  className="mt-1 transition-all duration-150 ease-out"
                   placeholder="Enter welcome message for new users"
                   rows={3}
                 />
@@ -128,8 +215,8 @@ export default function Settings() {
                     <p className="text-xs text-muted-foreground">Receive alerts for important events</p>
                   </div>
                   <Switch
-                    checked={enableNotifications}
-                    onCheckedChange={setEnableNotifications}
+                    checked={settings.enableNotifications}
+                    onCheckedChange={(value) => updateSetting('enableNotifications', value)}
                   />
                 </div>
 
@@ -139,8 +226,8 @@ export default function Settings() {
                     <p className="text-xs text-muted-foreground">Enable detailed activity logging</p>
                   </div>
                   <Switch
-                    checked={enableLogging}
-                    onCheckedChange={setEnableLogging}
+                    checked={settings.enableLogging}
+                    onCheckedChange={(value) => updateSetting('enableLogging', value)}
                   />
                 </div>
 
@@ -150,8 +237,8 @@ export default function Settings() {
                     <p className="text-xs text-muted-foreground">Automatically backup settings daily</p>
                   </div>
                   <Switch
-                    checked={autoBackup}
-                    onCheckedChange={setAutoBackup}
+                    checked={settings.autoBackup}
+                    onCheckedChange={(value) => updateSetting('autoBackup', value)}
                   />
                 </div>
               </div>
@@ -172,15 +259,28 @@ export default function Settings() {
                 </Label>
                 <Input
                   id="maxLogEntries"
-                  value={maxLogEntries}
-                  onChange={(e) => setMaxLogEntries(e.target.value)}
-                  className="mt-1"
+                  value={settings.maxLogEntries}
+                  onChange={(e) => updateSetting('maxLogEntries', e.target.value)}
+                  className="mt-1 transition-all duration-150 ease-out"
                   placeholder="1000"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Maximum number of log entries to keep
                 </p>
               </div>
+              
+              {isLoading && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  <span>Auto-saving...</span>
+                </div>
+              )}
+              
+              {lastSaved && (
+                <div className="text-xs text-success">
+                  Last saved: {lastSaved.toLocaleTimeString()}
+                </div>
+              )}
 
               <div className="p-4 rounded-lg bg-muted/50">
                 <h4 className="font-medium text-foreground mb-2">Security Settings</h4>
