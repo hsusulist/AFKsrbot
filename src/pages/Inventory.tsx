@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { useInventory, useRefreshInventory } from "@/hooks/useInventory";
 import { 
   Package, 
   Search, 
@@ -16,9 +19,6 @@ import {
   Pickaxe
 } from "lucide-react";
 
-const inventoryItems = [
-  // Bot inventory is empty - bot needs to be connected to server to show items
-];
 
 const getItemIcon = (type: string) => {
   switch (type) {
@@ -40,15 +40,72 @@ const getRarityColor = (rarity: string) => {
   }
 };
 
+interface InventoryItemWithType {
+  id: string;
+  name: string;
+  count: number;
+  slot?: number;
+  metadata?: string;
+  type: string;
+  rarity: string;
+  description: string;
+}
+
+const getItemType = (name: string): string => {
+  if (name.includes('sword') || name.includes('bow')) return 'weapon';
+  if (name.includes('pickaxe') || name.includes('axe') || name.includes('hoe') || name.includes('shovel')) return 'tool';
+  if (name.includes('helmet') || name.includes('chestplate') || name.includes('leggings') || name.includes('boots')) return 'armor';
+  if (name.includes('diamond') || name.includes('emerald') || name.includes('gold') || name.includes('iron')) return 'material';
+  if (name.includes('food') || name.includes('apple') || name.includes('bread') || name.includes('meat')) return 'consumable';
+  return 'misc';
+};
+
+const getItemRarity = (name: string): string => {
+  if (name.includes('diamond') || name.includes('netherite')) return 'legendary';
+  if (name.includes('gold') || name.includes('enchanted')) return 'epic';
+  if (name.includes('iron') || name.includes('stone')) return 'rare';
+  return 'common';
+};
+
+const getItemDescription = (name: string): string => {
+  return `A ${name.toLowerCase().replace(/_/g, ' ')} item from the Minecraft world.`;
+};
+
 export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
+  const { toast } = useToast();
+  const { data: inventoryItems = [], isLoading, error, refetch } = useInventory();
+  const refreshInventory = useRefreshInventory();
 
-  const filteredItems = inventoryItems.filter(item => {
+  const enrichedItems: InventoryItemWithType[] = inventoryItems.map(item => ({
+    ...item,
+    type: getItemType(item.name),
+    rarity: getItemRarity(item.name),
+    description: getItemDescription(item.name)
+  }));
+
+  const filteredItems = enrichedItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = selectedType === "all" || item.type === selectedType;
     return matchesSearch && matchesType;
   });
+
+  const handleRefresh = async () => {
+    try {
+      await refreshInventory.mutateAsync();
+      toast({
+        title: "Inventory Refreshed",
+        description: "Successfully updated inventory data",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh inventory. Bot may not be connected.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const itemTypes = ["all", "weapon", "tool", "armor", "consumable", "material", "misc"];
 
@@ -61,9 +118,14 @@ export default function Inventory() {
             <h1 className="text-3xl font-bold text-foreground">Bot Inventory</h1>
             <p className="text-muted-foreground">View your AFKBot's current inventory items</p>
           </div>
-          <Button variant="outline">
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            disabled={refreshInventory.isPending}
+            className="transition-all duration-150 ease-out hover:scale-105"
+          >
             <Package className="w-4 h-4 mr-2" />
-            Refresh
+            {refreshInventory.isPending ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
 
@@ -97,7 +159,38 @@ export default function Inventory() {
 
         {/* Inventory Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredItems.length === 0 ? (
+          {isLoading ? (
+            // Loading skeletons
+            Array.from({ length: 8 }).map((_, index) => (
+              <Card key={index} className="glass-effect p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="w-8 h-8 rounded-lg" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-20 mb-1" />
+                      <Skeleton className="h-3 w-12" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-5 w-16" />
+                </div>
+                <Skeleton className="h-3 w-full mb-3" />
+                <Skeleton className="h-3 w-3/4 mb-3" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 flex-1" />
+                  <Skeleton className="h-8 w-8" />
+                </div>
+              </Card>
+            ))
+          ) : error ? (
+            <div className="col-span-full text-center py-12">
+              <Package className="w-12 h-12 text-error mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Error Loading Inventory</h3>
+              <p className="text-muted-foreground mb-4">Failed to load inventory. Bot may not be connected.</p>
+              <Button onClick={() => refetch()} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          ) : filteredItems.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">No Items Found</h3>
@@ -105,7 +198,7 @@ export default function Inventory() {
             </div>
           ) : (
             filteredItems.map((item) => (
-            <Card key={item.id} className="glass-effect p-4 transition-smooth hover:scale-105">
+            <Card key={item.id} className="glass-effect p-4 transition-all duration-150 ease-out hover:scale-105 hover:shadow-lg">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-primary/10 rounded-lg">
@@ -127,7 +220,7 @@ export default function Inventory() {
               
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-foreground">
-                  Quantity: <span className="font-semibold">{item.quantity}</span>
+                  Quantity: <span className="font-semibold">{item.count}</span>
                 </span>
               </div>
               
@@ -152,7 +245,9 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <Package className="w-8 h-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold text-foreground">0</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {isLoading ? '-' : inventoryItems.length}
+                </p>
                 <p className="text-sm text-muted-foreground">Total Items</p>
               </div>
             </div>
@@ -162,7 +257,9 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <Sword className="w-8 h-8 text-accent" />
               <div>
-                <p className="text-2xl font-bold text-foreground">0</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {isLoading ? '-' : enrichedItems.filter(item => item.type === 'weapon').length}
+                </p>
                 <p className="text-sm text-muted-foreground">Weapons</p>
               </div>
             </div>
@@ -172,7 +269,9 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <ShieldIcon className="w-8 h-8 text-success" />
               <div>
-                <p className="text-2xl font-bold text-foreground">0</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {isLoading ? '-' : enrichedItems.filter(item => item.type === 'armor').length}
+                </p>
                 <p className="text-sm text-muted-foreground">Armor</p>
               </div>
             </div>
@@ -182,7 +281,9 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <Diamond className="w-8 h-8 text-warning" />
               <div>
-                <p className="text-2xl font-bold text-foreground">0</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {isLoading ? '-' : enrichedItems.filter(item => item.rarity === 'legendary').length}
+                </p>
                 <p className="text-sm text-muted-foreground">Legendary</p>
               </div>
             </div>

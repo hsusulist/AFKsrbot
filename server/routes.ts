@@ -1104,6 +1104,54 @@ export function createRoutes(storage: IStorage) {
     }
   });
 
+  // New endpoint that handles both commands and chat messages
+  router.post('/api/console/send', async (req, res) => {
+    try {
+      const { content } = req.body;
+      
+      if (!content || !content.trim()) {
+        return res.status(400).json({ error: 'Content is required' });
+      }
+      
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Minecraft bot is not connected', success: false });
+      }
+
+      let response = '';
+      let success = false;
+      let isCommand = content.startsWith('/');
+
+      try {
+        if (isCommand) {
+          // It's a command - send as is
+          minecraftBot.chat(content);
+          response = `Command executed: ${content}`;
+          await addLog('minecraft', 'info', `Console command executed: ${content}`);
+        } else {
+          // It's a chat message - send without prefix
+          minecraftBot.chat(content);
+          response = `Message sent: ${content}`;
+          await addLog('minecraft', 'info', `Chat message sent: ${content}`);
+        }
+        success = true;
+      } catch (error) {
+        response = `Failed to send ${isCommand ? 'command' : 'message'}: ${error.message}`;
+        await addLog('minecraft', 'error', `Console ${isCommand ? 'command' : 'message'} failed: ${content}`, error.message);
+      }
+
+      const commandRecord = await storage.addConsoleCommand({
+        command: content,
+        response,
+        success,
+        requiresOp: isCommand,
+      });
+
+      res.json({ ...commandRecord, success, response });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to process request', success: false });
+    }
+  });
+
   router.get('/api/console/commands', async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;

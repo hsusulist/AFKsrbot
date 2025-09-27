@@ -5,7 +5,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useAutosave } from "@/hooks/useAutosave";
 import { 
   Terminal, 
   Send, 
@@ -29,10 +31,17 @@ interface ConsoleEntry {
 const initialConsoleEntries: ConsoleEntry[] = [];
 
 export default function Console() {
-  const [command, setCommand] = useState("");
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>(initialConsoleEntries);
   const [isConnected, setIsConnected] = useState(true);
+  const [isExecuting, setIsExecuting] = useState(false);
   const { toast } = useToast();
+  
+  // Auto-save command input
+  const { data: command, setData: setCommand } = useAutosave<string>(
+    'console-command',
+    '',
+    { debounceMs: 500 }
+  );
 
   const executeCommand = async () => {
     if (!command.trim()) return;
@@ -52,12 +61,14 @@ export default function Console() {
 
     setConsoleEntries(prev => [...prev, newCommand]);
 
+    setIsExecuting(true);
+    
     try {
-      // Send actual command to bot
-      const response = await fetch('/api/console/command', {
+      // Send raw content to server for classification
+      const response = await fetch('/api/console/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: command.startsWith('/') ? command.slice(1) : command })
+        body: JSON.stringify({ content: command })
       });
 
       const result = await response.json();
@@ -102,6 +113,8 @@ export default function Console() {
         description: "❌ Cannot send command - Bot not connected to server",
         variant: "destructive"
       });
+    } finally {
+      setIsExecuting(false);
     }
 
   };
@@ -171,11 +184,18 @@ export default function Console() {
           {/* Console Output */}
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-2 font-mono text-sm">
-              {consoleEntries.map((entry) => (
-                <div 
-                  key={entry.id} 
-                  className="flex items-start gap-2 hover:bg-muted/30 p-2 rounded group"
-                >
+              {consoleEntries.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Terminal className="w-12 h-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Console Activity</h3>
+                  <p className="text-muted-foreground">Execute commands to see output here</p>
+                </div>
+              ) : (
+                consoleEntries.map((entry) => (
+                  <div 
+                    key={entry.id} 
+                    className="flex items-start gap-2 hover:bg-muted/30 p-2 rounded group transition-all duration-150 ease-out"
+                  >
                   <span className="text-xs text-muted-foreground shrink-0 w-16">
                     {entry.timestamp}
                   </span>
@@ -198,8 +218,9 @@ export default function Console() {
                   >
                     <Copy className="w-3 h-3" />
                   </Button>
-                </div>
-              ))}
+                  </div>
+                ))
+              )}
             </div>
           </ScrollArea>
 
@@ -209,25 +230,30 @@ export default function Console() {
               <div className="relative flex-1">
                 <Terminal className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Enter Minecraft command (e.g., /list, /tp, /give)..."
+                  placeholder="Enter command or message (commands start with /)..."
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && executeCommand()}
-                  className="pl-10 font-mono"
-                  disabled={!isConnected}
+                  onKeyPress={(e) => e.key === "Enter" && !isExecuting && executeCommand()}
+                  className="pl-10 font-mono transition-all duration-150 ease-out focus-visible:ring-2 focus-visible:ring-primary"
+                  disabled={!isConnected || isExecuting}
                 />
+                {isExecuting && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
               <Button 
                 onClick={executeCommand} 
-                disabled={!command.trim() || !isConnected}
-                className="gradient-gaming glow-primary"
+                disabled={!command.trim() || !isConnected || isExecuting}
+                className="gradient-gaming glow-primary transition-all duration-150 ease-out hover:scale-105"
               >
                 <Send className="w-4 h-4 mr-2" />
-                Execute
+                {isExecuting ? 'Sending...' : 'Execute'}
               </Button>
             </div>
             <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-              <span>Tip: Commands are executed with operator permissions</span>
+              <span>Tip: Type "/command" for server commands or plain text for chat messages</span>
               <span>{consoleEntries.length} entries</span>
             </div>
           </div>
