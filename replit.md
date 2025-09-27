@@ -1,0 +1,94 @@
+# AFK Bot Dashboard
+
+## Overview
+
+The AFK Bot Dashboard is a React-based web application designed to manage and control a Discord bot that operates on Minecraft servers. The system provides a comprehensive management interface for monitoring bot status, controlling Discord and Minecraft server connections, viewing logs, managing inventory, and configuring various bot settings. The dashboard serves as a central control panel for administrators to oversee an automated bot that performs anti-AFK behaviors, player interactions, and server monitoring functions.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript for type safety and modern development practices
+- **Build Tool**: Vite for fast development and optimized production builds
+- **UI Components**: Shadcn/ui component library built on Radix UI primitives for accessible, customizable components
+- **Styling**: Tailwind CSS with custom Discord-inspired dark theme and gaming aesthetics
+- **State Management**: React hooks for local state, TanStack Query for server state management
+- **Routing**: React Router for client-side navigation with dedicated pages for each dashboard section
+
+### Component Structure
+- **Layout System**: Centralized layout component with persistent sidebar navigation
+- **Page-Based Architecture**: Modular pages for Dashboard, Discord Bot control, Server Config, Inventory, Logs, Console, and Settings
+- **Reusable Components**: StatCard for metrics display, custom UI components extending Shadcn/ui base
+- **Theme System**: Discord-inspired color palette with CSS custom properties for consistent theming
+
+### Data Flow
+- **No Backend Integration**: Currently operates as a frontend-only application with simulated data
+- **Local State**: Component-level state management for form inputs and UI interactions
+- **Mock Data**: Hardcoded data structures for logs, inventory items, and bot status information
+- **Client-Side Validation**: Form validation using react-hook-form with resolvers
+
+### Configuration Management
+- **Environment Agnostic**: No environment-specific configurations currently implemented
+- **Development Setup**: Configured for local development with hot module replacement
+- **Production Ready**: Build configuration optimized for production deployment
+
+### Navigation Structure
+The application follows a hub-and-spoke navigation pattern with these main sections:
+- Dashboard (main overview with stats and controls)
+- Discord Bot (token configuration and connection management)
+- Server Config (Minecraft server connection settings)
+- Inventory (bot inventory viewing and management)
+- Discord Logs (Discord command and interaction history)
+- Minecraft Logs (server chat and event monitoring)
+- Console (server command execution interface)
+- Settings (application configuration)
+- How to Use (user documentation)
+
+## External Dependencies
+
+### Core Framework Dependencies
+- **React & React DOM**: Frontend framework for component-based UI development
+- **TypeScript**: Static typing for enhanced development experience and code reliability
+- **Vite**: Modern build tool for fast development and optimized production builds
+
+### UI and Styling
+- **Tailwind CSS**: Utility-first CSS framework for rapid UI development
+- **Radix UI**: Headless component primitives for accessible UI components (@radix-ui/react-*)
+- **Shadcn/ui**: Pre-built component library extending Radix UI with consistent styling
+- **Lucide React**: Icon library providing consistent iconography throughout the application
+- **Class Variance Authority**: Utility for creating variant-based component APIs
+
+### State Management and Data Fetching
+- **TanStack React Query**: Server state management and caching (prepared for future backend integration)
+- **React Hook Form**: Form state management and validation
+- **Hookform Resolvers**: Validation resolver integration for form handling
+
+### Routing and Navigation
+- **React Router DOM**: Client-side routing for single-page application navigation
+
+### Development and Build Tools
+- **ESLint**: Code linting with TypeScript and React-specific rules
+- **PostCSS**: CSS processing for Tailwind CSS integration
+- **React Refresh**: Hot module replacement for development experience
+
+### Utility Libraries
+- **clsx & Tailwind Merge**: Conditional CSS class name management
+- **Date-fns**: Date manipulation and formatting utilities
+- **CMDK**: Command menu implementation for search and navigation
+- **Embla Carousel**: Carousel component implementation
+
+### Theme and UI Enhancement
+- **Next Themes**: Theme switching capabilities for light/dark mode support
+- **Sonner**: Toast notification system for user feedback
+- **Input OTP**: One-time password input component
+- **React Day Picker**: Date picker component for form inputs
+
+### Future Integration Points
+The application architecture is prepared for backend integration with:
+- Discord API for bot token validation and command execution
+- Minecraft server APIs for real-time monitoring and control
+- Database systems for persistent storage of logs, settings, and bot state
+- WebSocket connections for real-time updates and live monitoring
