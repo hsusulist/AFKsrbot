@@ -11,14 +11,14 @@
   },
   "minecraftConfig": {
     "id": "minecraft_server",
-    "serverIP": "teddysmpp.aternos.me",
+    "serverIP": "test-server.example.com",
     "serverPort": "39018",
-    "username": "test",
+    "username": "TestBot123",
     "password": "bot123",
     "shouldRegister": true,
     "version": "1.20.4",
     "platform": "java",
-    "autoReconnect": true,
+    "autoReconnect": false,
     "mode24_7": true,
     "useWhitelist": false,
     "isConnected": false,
@@ -103,25 +103,25 @@
       "message": "Failed to connect Discord bot: An invalid token was provided."
     },
     {
-      "id": "1758969810655txqnkw7i2",
-      "timestamp": "2025-09-27T10:43:30.655Z",
+      "id": "175897011298326ooaiwib",
+      "timestamp": "2025-09-27T10:48:32.983Z",
       "type": "minecraft",
       "level": "info",
-      "message": "🔄 Auto-reconnecting in 10 seconds..."
+      "message": "🔄 Auto-reconnecting in 0 seconds..."
     },
     {
-      "id": "17589698206656f88dsnnd",
-      "timestamp": "2025-09-27T10:43:40.665Z",
+      "id": "1758970112984il779hsuu",
+      "timestamp": "2025-09-27T10:48:32.984Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
     },
     {
-      "id": "1758969913481lacagvxkz",
-      "timestamp": "2025-09-27T10:45:13.481Z",
+      "id": "1758970143744w0o1yvycf",
+      "timestamp": "2025-09-27T10:49:03.744Z",
       "type": "minecraft",
       "level": "info",
-      "message": "Console command executed: /hi"
+      "message": "💾 Server configuration saved"
     }
   ],
   "inventory": []
