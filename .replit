@@ -6,8 +6,8 @@ expertMode = true
 channel = "stable-25_05"
 
 [deployment]
-deploymentTarget = "vm"
-build = ["bash", "-c", "npm run build && npm run build:server"]
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
 run = ["npm", "start"]
 
 [workflows]
