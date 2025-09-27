@@ -32,8 +32,8 @@ async function startServer() {
       });
     }
 
-    app.listen(port, () => {
-      console.log(`🚀 AFK Bot Dashboard server running on port ${port}`);
+    app.listen(port, 'localhost', () => {
+      console.log(`🚀 AFK Bot Dashboard server running on localhost:${port}`);
       console.log(`📱 Discord bot ready for connections`);
       console.log(`🎮 Minecraft bot ready for connections`);
     });
