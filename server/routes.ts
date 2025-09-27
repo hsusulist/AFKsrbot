@@ -654,12 +654,214 @@ export function createRoutes(storage: IStorage) {
       let lastPlayerInteraction = Date.now();
       let greetedPlayers = new Set<string>();
       
+      // Enhanced player interaction variables
+      let waitingForResponse = new Map<string, {
+        askedAt: number,
+        scenario: 'love_question'
+      }>();
+      let currentTarget: string | null = null;
+      let isApproachingPlayer = false;
+      
+      // Helper functions for player interactions
+      const getRandomPlayer = () => {
+        if (!minecraftBot || !minecraftBot.players) return null;
+        const players = Object.keys(minecraftBot.players).filter(name => {
+          const player = minecraftBot.players[name];
+          return name !== minecraftBot.username && player && player.entity;
+        });
+        if (players.length === 0) return null;
+        return players[Math.floor(Math.random() * players.length)];
+      };
+      
+      const getDistanceToPlayer = (playerName: string) => {
+        if (!minecraftBot || !minecraftBot.entity || !minecraftBot.players[playerName]) return null;
+        const player = minecraftBot.players[playerName];
+        if (!player.entity) return null;
+        return minecraftBot.entity.position.distanceTo(player.entity.position);
+      };
+      
+      const moveTowardsPlayer = async (playerName: string, targetDistance: number) => {
+        if (!minecraftBot || !minecraftBot.entity || !minecraftBot.players[playerName]) return false;
+        const player = minecraftBot.players[playerName];
+        if (!player.entity) return false;
+        
+        const distance = getDistanceToPlayer(playerName);
+        if (distance === null || distance <= targetDistance) return true;
+        
+        // Clear all control states first
+        minecraftBot.clearControlStates();
+        
+        // Look at the player
+        await minecraftBot.lookAt(player.entity.position.offset(0, player.entity.height, 0));
+        
+        // Move forward towards the player (since we're now facing them)
+        minecraftBot.setControlState('forward', true);
+        
+        return false;
+      };
+      
       // AFKsrbot anti-AFK behaviors
       const startAntiAFKBehaviors = () => {
         // Random movement every 3-8 seconds (much more active like a real player)
-        const movementInterval = setInterval(() => {
+        const movementInterval = setInterval(async () => {
           if (!minecraftBot || !minecraftBot.entity) return;
           
+          // Skip movement if already approaching a player
+          if (isApproachingPlayer) return;
+          
+          // 5% chance to approach a player instead of random movement
+          const shouldApproachPlayer = Math.random() < 0.05;
+          
+          if (shouldApproachPlayer && !isApproachingPlayer) {
+            const targetPlayer = getRandomPlayer();
+            if (targetPlayer) {
+              isApproachingPlayer = true;
+              currentTarget = targetPlayer;
+              
+              // 50/50 chance for two different scenarios
+              const scenario = Math.random() < 0.5 ? 'casual_hi' : 'love_question';
+              
+              if (scenario === 'casual_hi') {
+                // Scenario 1: Move to 40 blocks and say hi
+                let safetyTimeout: NodeJS.Timeout;
+                
+                const cleanupApproach = () => {
+                  clearInterval(approachInterval);
+                  if (safetyTimeout) clearTimeout(safetyTimeout);
+                  const approachIndex = afkIntervals.indexOf(approachInterval);
+                  if (approachIndex > -1) afkIntervals.splice(approachIndex, 1);
+                  const timeoutIndex = afkIntervals.indexOf(safetyTimeout);
+                  if (timeoutIndex > -1) afkIntervals.splice(timeoutIndex, 1);
+                  isApproachingPlayer = false;
+                  currentTarget = null;
+                  if (minecraftBot) minecraftBot.clearControlStates();
+                };
+                
+                const approachInterval = setInterval(async () => {
+                  if (!currentTarget || !minecraftBot) {
+                    cleanupApproach();
+                    return;
+                  }
+                  
+                  // Validate target still exists and is reachable
+                  if (!minecraftBot.players[currentTarget]?.entity) {
+                    await addLog('minecraft', 'warn', `Target ${currentTarget} disappeared during approach`);
+                    cleanupApproach();
+                    return;
+                  }
+                  
+                  const distance = getDistanceToPlayer(currentTarget);
+                  if (distance && distance > 120) {
+                    await addLog('minecraft', 'warn', `Target ${currentTarget} too far away (${distance.toFixed(1)} blocks)`);
+                    cleanupApproach();
+                    return;
+                  }
+                  
+                  const reachedTarget = await moveTowardsPlayer(currentTarget, 40);
+                  if (reachedTarget) {
+                    minecraftBot.clearControlStates();
+                    minecraftBot.chat('hi');
+                    await addLog('minecraft', 'info', `👋 Said hi to ${currentTarget} from 40 blocks`);
+                    cleanupApproach();
+                  }
+                }, 1000);
+                
+                afkIntervals.push(approachInterval);
+                
+                // Safety timeout
+                safetyTimeout = setTimeout(() => {
+                  addLog('minecraft', 'info', 'Approach timeout - returned to normal behavior');
+                  cleanupApproach();
+                }, 30000);
+                
+                afkIntervals.push(safetyTimeout);
+                
+              } else {
+                // Scenario 2: Move to 5 blocks, shift, look, ask question
+                let safetyTimeout: NodeJS.Timeout;
+                
+                const cleanupLoveApproach = () => {
+                  clearInterval(approachInterval);
+                  if (safetyTimeout) clearTimeout(safetyTimeout);
+                  const approachIndex = afkIntervals.indexOf(approachInterval);
+                  if (approachIndex > -1) afkIntervals.splice(approachIndex, 1);
+                  const timeoutIndex = afkIntervals.indexOf(safetyTimeout);
+                  if (timeoutIndex > -1) afkIntervals.splice(timeoutIndex, 1);
+                  isApproachingPlayer = false;
+                  currentTarget = null;
+                  if (minecraftBot) {
+                    minecraftBot.clearControlStates();
+                    minecraftBot.setControlState('sneak', false);
+                  }
+                };
+                
+                const approachInterval = setInterval(async () => {
+                  if (!currentTarget || !minecraftBot) {
+                    cleanupLoveApproach();
+                    return;
+                  }
+                  
+                  // Validate target still exists and is reachable
+                  if (!minecraftBot.players[currentTarget]?.entity) {
+                    await addLog('minecraft', 'warn', `Target ${currentTarget} disappeared during approach`);
+                    cleanupLoveApproach();
+                    return;
+                  }
+                  
+                  const distance = getDistanceToPlayer(currentTarget);
+                  if (distance && distance > 120) {
+                    await addLog('minecraft', 'warn', `Target ${currentTarget} too far away (${distance.toFixed(1)} blocks)`);
+                    cleanupLoveApproach();
+                    return;
+                  }
+                  
+                  const reachedTarget = await moveTowardsPlayer(currentTarget, 5);
+                  if (reachedTarget) {
+                    minecraftBot.clearControlStates();
+                    minecraftBot.setControlState('sneak', true); // Shift
+                    
+                    // Look at player
+                    if (minecraftBot.players[currentTarget]?.entity) {
+                      await minecraftBot.lookAt(minecraftBot.players[currentTarget].entity.position.offset(0, minecraftBot.players[currentTarget].entity.height, 0));
+                    }
+                    
+                    // Wait 7 seconds then ask question
+                    setTimeout(async () => {
+                      if (minecraftBot && currentTarget && !waitingForResponse.has(currentTarget)) {
+                        minecraftBot.chat(`hello ${currentTarget} do you love the server`);
+                        waitingForResponse.set(currentTarget, {
+                          askedAt: Date.now(),
+                          scenario: 'love_question'
+                        });
+                        await addLog('minecraft', 'info', `❤️ Asked ${currentTarget} if they love the server`);
+                        
+                        // Stop shifting after asking
+                        setTimeout(() => {
+                          if (minecraftBot) minecraftBot.setControlState('sneak', false);
+                        }, 2000);
+                      }
+                    }, 7000);
+                    
+                    cleanupLoveApproach();
+                  }
+                }, 1000);
+                
+                afkIntervals.push(approachInterval);
+                
+                // Safety timeout
+                safetyTimeout = setTimeout(() => {
+                  addLog('minecraft', 'info', 'Love question approach timeout - returned to normal behavior');
+                  cleanupLoveApproach();
+                }, 45000);
+                
+                afkIntervals.push(safetyTimeout);
+              }
+              
+              return; // Skip normal movement when approaching player
+            }
+          }
+          
+          // Normal random movement
           const randomActions = [
             () => minecraftBot.setControlState('forward', true),
             () => minecraftBot.setControlState('back', true),
@@ -722,7 +924,15 @@ export function createRoutes(storage: IStorage) {
           
         }, 5000); // Every 5 seconds
         
-        afkIntervals.push(movementInterval, lookInterval, healthInterval);
+        // Server love message every 7 minutes
+        const serverLoveInterval = setInterval(() => {
+          if (minecraftBot) {
+            minecraftBot.chat('I love this server very much');
+            addLog('minecraft', 'info', '💖 Expressed love for the server');
+          }
+        }, 7 * 60 * 1000); // 7 minutes
+        
+        afkIntervals.push(movementInterval, lookInterval, healthInterval, serverLoveInterval);
       };
       
       // Setup event handlers
@@ -811,6 +1021,51 @@ export function createRoutes(storage: IStorage) {
         // Player interaction responses
         const lowerMessage = message.toLowerCase();
         const botName = config.username.toLowerCase();
+        
+        // Check for responses to server love question
+        if (waitingForResponse.has(username)) {
+          const responseInfo = waitingForResponse.get(username);
+          if (responseInfo && responseInfo.scenario === 'love_question') {
+            // Check if response is within time limit (30 seconds)
+            if (Date.now() - responseInfo.askedAt <= 30000) {
+              // Remove from waiting list immediately to avoid duplicate responses
+              waitingForResponse.delete(username);
+              
+              // Parse response more robustly using word boundaries
+              const words = lowerMessage.trim().split(/\s+/);
+              const hasYes = words.some(word => word === 'yes' || word === 'yeah' || word === 'yep' || word === 'y');
+              const hasNo = words.some(word => word === 'no' || word === 'nope' || word === 'n');
+              
+              if (hasYes && !hasNo) {
+                setTimeout(() => {
+                  if (minecraftBot) {
+                    minecraftBot.chat('Me too I loved this server very much !');
+                    addLog('minecraft', 'info', `💝 ${username} loves the server - positive response given`);
+                  }
+                }, Math.random() * 1500 + 500); // 0.5-2 second delay
+              } else if (hasNo && !hasYes) {
+                setTimeout(() => {
+                  if (minecraftBot) {
+                    minecraftBot.chat('IF YOU DON\'T LOVE THE SERVER THEN GET OUT');
+                    addLog('minecraft', 'info', `😠 ${username} doesn't love the server - negative response given`);
+                  }
+                }, Math.random() * 1500 + 500); // 0.5-2 second delay
+              }
+              // If response doesn't contain clear yes or no, just remove from waiting list without responding
+            } else {
+              // Response too old, remove from waiting list
+              waitingForResponse.delete(username);
+            }
+            return; // Don't process other chat logic for this message
+          }
+        }
+        
+        // Clean up old waiting responses (older than 30 seconds)
+        for (const [playerName, responseInfo] of waitingForResponse.entries()) {
+          if (Date.now() - responseInfo.askedAt > 30000) {
+            waitingForResponse.delete(playerName);
+          }
+        }
         
         // Greet new players
         if (!greetedPlayers.has(username)) {

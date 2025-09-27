@@ -32,7 +32,7 @@
     "id": "bot_status",
     "discordConnected": false,
     "minecraftConnected": false,
-    "lastActivity": "2025-09-27T22:55:49.306Z",
+    "lastActivity": "2025-09-27T23:33:01.984Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [
@@ -146,60 +146,18 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "1759013749306qhbp500aj",
-      "timestamp": "2025-09-27T22:55:49.306Z",
+      "id": "1759016018697sglb6v8xq",
+      "timestamp": "2025-09-27T23:33:38.697Z",
       "type": "minecraft",
       "level": "info",
       "message": "🔄 Auto-reconnecting in 0 seconds..."
     },
     {
-      "id": "17590137493070hthkevvw",
-      "timestamp": "2025-09-27T22:55:49.307Z",
+      "id": "1759016018699xhv8xbwaz",
+      "timestamp": "2025-09-27T23:33:38.699Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
-    },
-    {
-      "id": "17590150080958uzf1g2hr",
-      "timestamp": "2025-09-27T23:16:48.095Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💾 Server configuration saved"
-    },
-    {
-      "id": "1759015009238qdmp3dlyv",
-      "timestamp": "2025-09-27T23:16:49.238Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💾 Server configuration saved"
-    },
-    {
-      "id": "1759015009718kxzkxt2c7",
-      "timestamp": "2025-09-27T23:16:49.718Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💾 Server configuration saved"
-    },
-    {
-      "id": "1759015010191ykk3dke5s",
-      "timestamp": "2025-09-27T23:16:50.191Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💾 Server configuration saved"
-    },
-    {
-      "id": "1759015010664km39bpf2w",
-      "timestamp": "2025-09-27T23:16:50.664Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💾 Server configuration saved"
-    },
-    {
-      "id": "1759015011120o6it86soa",
-      "timestamp": "2025-09-27T23:16:51.120Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💾 Server configuration saved"
     }
   ],
   "inventory": []
