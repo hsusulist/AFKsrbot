@@ -25,10 +25,11 @@ Preferred communication style: Simple, everyday language.
 - **Theme System**: Discord-inspired color palette with CSS custom properties for consistent theming
 
 ### Data Flow
-- **No Backend Integration**: Currently operates as a frontend-only application with simulated data
-- **Local State**: Component-level state management for form inputs and UI interactions
-- **Mock Data**: Hardcoded data structures for logs, inventory items, and bot status information
-- **Client-Side Validation**: Form validation using react-hook-form with resolvers
+- **Full-Stack Integration**: Complete frontend-backend integration with Express.js server
+- **Real API Endpoints**: Live API endpoints for Discord bot and Minecraft server management
+- **In-Memory Storage**: MemStorage implementation for development and testing
+- **Real-time Communication**: WebSocket-ready architecture for live bot status updates
+- **Form Validation**: Client-side and server-side validation using react-hook-form with Zod schemas
 
 ### Configuration Management
 - **Environment Agnostic**: No environment-specific configurations currently implemented
@@ -86,9 +87,20 @@ The application follows a hub-and-spoke navigation pattern with these main secti
 - **Input OTP**: One-time password input component
 - **React Day Picker**: Date picker component for form inputs
 
-### Future Integration Points
-The application architecture is prepared for backend integration with:
-- Discord API for bot token validation and command execution
-- Minecraft server APIs for real-time monitoring and control
-- Database systems for persistent storage of logs, settings, and bot state
-- WebSocket connections for real-time updates and live monitoring
+## Recent Changes
+
+### September 27, 2025: Replit Environment Setup
+- Successfully imported GitHub repository to Replit environment
+- Installed all required dependencies including concurrently, Express.js, Discord.js, and Mineflayer
+- Configured full-stack development with concurrent frontend/backend execution
+- Frontend runs on port 5000 (Replit standard) with proper host configuration (0.0.0.0)
+- Backend runs on port 3001 with CORS configured for Replit environment
+- Deployment configuration set for autoscale production deployment
+- Verified complete application functionality with screenshot testing
+
+### Backend Integration Features
+- **Discord Bot Management**: Complete Discord.js integration with slash commands
+- **Minecraft Bot Control**: Mineflayer integration for AFK bot behaviors
+- **API Endpoints**: RESTful API for all bot management operations
+- **Real-time Updates**: Status monitoring and live activity feeds
+- **Security**: Token validation and sensitive data protection
