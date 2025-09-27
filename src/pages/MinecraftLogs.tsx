@@ -16,88 +16,8 @@ import {
   Skull
 } from "lucide-react";
 
-const minecraftLogs = [
-  {
-    id: 1,
-    timestamp: "2024-01-15 14:36:45",
-    type: "chat",
-    player: "Player123",
-    message: "Hello everyone!",
-    icon: MessageCircle
-  },
-  {
-    id: 2,
-    timestamp: "2024-01-15 14:36:12",
-    type: "join",
-    player: "Player456",
-    message: "Player456 joined the game",
-    icon: UserPlus
-  },
-  {
-    id: 3,
-    timestamp: "2024-01-15 14:35:33",
-    type: "chat",
-    player: "AFKBot",
-    message: "Hello Player456! Welcome to the server!",
-    icon: MessageCircle
-  },
-  {
-    id: 4,
-    timestamp: "2024-01-15 14:34:21",
-    type: "command",
-    player: "Admin",
-    message: "/tp Player123 100 64 200",
-    icon: Zap
-  },
-  {
-    id: 5,
-    timestamp: "2024-01-15 14:33:45",
-    type: "death",
-    player: "Player789",
-    message: "Player789 was slain by Zombie",
-    icon: Skull
-  },
-  {
-    id: 6,
-    timestamp: "2024-01-15 14:32:18",
-    type: "chat",
-    player: "Player789",
-    message: "Can someone help me with enchanting?",
-    icon: MessageCircle
-  },
-  {
-    id: 7,
-    timestamp: "2024-01-15 14:31:55",
-    type: "leave",
-    player: "Player001",
-    message: "Player001 left the game",
-    icon: UserMinus
-  },
-  {
-    id: 8,
-    timestamp: "2024-01-15 14:31:22",
-    type: "chat",
-    player: "AFKBot",
-    message: "I'm at coordinates 125, 64, -45 if anyone needs me!",
-    icon: MessageCircle
-  },
-  {
-    id: 9,
-    timestamp: "2024-01-15 14:30:45",
-    type: "join",
-    player: "Player001",
-    message: "Player001 joined the game",
-    icon: UserPlus
-  },
-  {
-    id: 10,
-    timestamp: "2024-01-15 14:29:33",
-    type: "command",
-    player: "Moderator",
-    message: "/gamemode creative Player123",
-    icon: Zap
-  }
-];
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 const getTypeColor = (type: string) => {
   switch (type) {
@@ -114,10 +34,17 @@ export default function MinecraftLogs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
 
-  const filteredLogs = minecraftLogs.filter(log => {
-    const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.player.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === "all" || log.type === selectedType;
+  // Fetch real logs from backend
+  const { data: logs = [], isLoading, refetch } = useQuery({
+    queryKey: ['/api/logs', 'minecraft'],
+    queryFn: () => apiRequest('/api/logs?type=minecraft&limit=100'),
+    refetchInterval: 2000, // Auto-refresh every 2 seconds
+  });
+
+  const filteredLogs = logs.filter((log: any) => {
+    const searchText = `${log.message || ''} ${log.details || ''}`.toLowerCase();
+    const matchesSearch = searchText.includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === "all" || log.level === selectedType;
     return matchesSearch && matchesType;
   });
 
@@ -214,7 +141,7 @@ export default function MinecraftLogs() {
               <MessageCircle className="w-6 h-6 text-primary" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {minecraftLogs.filter(log => log.type === "chat").length}
+                  {logs.filter((log: any) => log.message && log.message.includes('💬')).length}
                 </p>
                 <p className="text-xs text-muted-foreground">Chat Messages</p>
               </div>
@@ -226,7 +153,7 @@ export default function MinecraftLogs() {
               <UserPlus className="w-6 h-6 text-success" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {minecraftLogs.filter(log => log.type === "join").length}
+                  {logs.filter((log: any) => log.message && log.message.includes('joined')).length}
                 </p>
                 <p className="text-xs text-muted-foreground">Player Joins</p>
               </div>
@@ -238,7 +165,7 @@ export default function MinecraftLogs() {
               <UserMinus className="w-6 h-6 text-warning" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {minecraftLogs.filter(log => log.type === "leave").length}
+                  {logs.filter((log: any) => log.message && log.message.includes('left')).length}
                 </p>
                 <p className="text-xs text-muted-foreground">Player Leaves</p>
               </div>
@@ -250,7 +177,7 @@ export default function MinecraftLogs() {
               <Skull className="w-6 h-6 text-error" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {minecraftLogs.filter(log => log.type === "death").length}
+                  {logs.filter((log: any) => log.message && (log.message.includes('died') || log.message.includes('slain'))).length}
                 </p>
                 <p className="text-xs text-muted-foreground">Deaths</p>
               </div>
@@ -262,7 +189,7 @@ export default function MinecraftLogs() {
               <Zap className="w-6 h-6 text-accent" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {minecraftLogs.filter(log => log.type === "command").length}
+                  {logs.filter((log: any) => log.message && log.message.includes('Console command')).length}
                 </p>
                 <p className="text-xs text-muted-foreground">Commands</p>
               </div>

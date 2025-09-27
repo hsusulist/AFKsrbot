@@ -14,90 +14,24 @@ import {
   Clock
 } from "lucide-react";
 
-const discordLogs = [
-  {
-    id: 1,
-    timestamp: "2024-01-15 14:35:22",
-    user: "Player123",
-    channel: "#bot-commands",
-    command: "/start",
-    status: "success",
-    response: "Minecraft bot started successfully"
-  },
-  {
-    id: 2,
-    timestamp: "2024-01-15 14:34:15",
-    user: "Admin",
-    channel: "#general",
-    command: "/setup",
-    status: "success",
-    response: "Status monitoring configured for this channel"
-  },
-  {
-    id: 3,
-    timestamp: "2024-01-15 14:33:45",
-    user: "Player456",
-    channel: "#bot-commands",
-    command: "/inventory",
-    status: "success",
-    response: "Bot inventory displayed"
-  },
-  {
-    id: 4,
-    timestamp: "2024-01-15 14:32:30",
-    user: "Player789",
-    channel: "#bot-commands",
-    command: "/command tp @a 0 100 0",
-    status: "error",
-    response: "Insufficient permissions to execute command"
-  },
-  {
-    id: 5,
-    timestamp: "2024-01-15 14:31:12",
-    user: "Moderator",
-    channel: "#admin",
-    command: "/log",
-    status: "success",
-    response: "Chat logging enabled for this channel"
-  },
-  {
-    id: 6,
-    timestamp: "2024-01-15 14:30:45",
-    user: "Player123",
-    channel: "#bot-commands",
-    command: "/status",
-    status: "success",
-    response: "Bot status: Online, Health: 100%, Position: X:125 Y:64 Z:-45"
-  },
-  {
-    id: 7,
-    timestamp: "2024-01-15 14:29:33",
-    user: "Player456",
-    channel: "#bot-commands",
-    command: "/restart",
-    status: "success",
-    response: "Bot restarted successfully"
-  },
-  {
-    id: 8,
-    timestamp: "2024-01-15 14:28:21",
-    user: "Player789",
-    channel: "#bot-commands",
-    command: "/stop",
-    status: "success",
-    response: "Minecraft bot stopped"
-  }
-];
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function DiscordLogs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
-  const filteredLogs = discordLogs.filter(log => {
-    const matchesSearch = log.command.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.channel.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === "all" || log.status === selectedStatus;
+  // Fetch real logs from backend
+  const { data: logs = [], isLoading, refetch } = useQuery({
+    queryKey: ['/api/logs', 'discord'],
+    queryFn: () => apiRequest('/api/logs?type=discord&limit=100'),
+    refetchInterval: 2000, // Auto-refresh every 2 seconds
+  });
+
+  const filteredLogs = logs.filter((log: any) => {
+    const searchText = `${log.message || ''} ${log.details || ''}`.toLowerCase();
+    const matchesSearch = searchText.includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === "all" || log.level === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -205,7 +139,7 @@ export default function DiscordLogs() {
               <MessageSquare className="w-8 h-8 text-primary" />
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  {discordLogs.length}
+                  {logs.length}
                 </p>
                 <p className="text-sm text-muted-foreground">Total Commands</p>
               </div>
@@ -217,7 +151,7 @@ export default function DiscordLogs() {
               <User className="w-8 h-8 text-success" />
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  {new Set(discordLogs.map(log => log.user)).size}
+                  {new Set(logs.map((log: any) => log.message)).size}
                 </p>
                 <p className="text-sm text-muted-foreground">Active Users</p>
               </div>
@@ -229,7 +163,7 @@ export default function DiscordLogs() {
               <Hash className="w-8 h-8 text-accent" />
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  {new Set(discordLogs.map(log => log.channel)).size}
+                  {new Set(logs.map((log: any) => log.level)).size}
                 </p>
                 <p className="text-sm text-muted-foreground">Channels Used</p>
               </div>
