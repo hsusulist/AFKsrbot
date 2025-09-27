@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,13 +26,123 @@ import {
 export default function DiscordBot() {
   const [botToken, setBotToken] = useState("");
   const [showToken, setShowToken] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [autoStart, setAutoStart] = useState(false);
   const [logCommands, setLogCommands] = useState(true);
   const { toast } = useToast();
 
+  // Get current Discord config
+  const { data: config, isLoading } = useQuery({
+    queryKey: ['/api/discord/config'],
+  });
+
+  // Type the config
+  const typedConfig = config as {
+    isConnected?: boolean;
+    autoStart?: boolean;
+    logCommands?: boolean;
+    guildCount?: number;
+    commandsExecuted?: number;
+    uptime?: string;
+    lastConnected?: string;
+    hasToken?: boolean;
+  } | undefined;
+
+  const isConnected = typedConfig?.isConnected || false;
+
+  // Update state when config loads
+  useEffect(() => {
+    if (typedConfig) {
+      setAutoStart(typedConfig.autoStart || false);
+      setLogCommands(typedConfig.logCommands !== undefined ? typedConfig.logCommands : true);
+      // Don't auto-fill token for security, but show that one exists
+    }
+  }, [typedConfig]);
+
+  // Handle settings changes with persistence
+  const handleAutoStartChange = (checked: boolean) => {
+    setAutoStart(checked);
+    updateSettingsMutation.mutate({ autoStart: checked });
+  };
+
+  const handleLogCommandsChange = (checked: boolean) => {
+    setLogCommands(checked);
+    updateSettingsMutation.mutate({ logCommands: checked });
+  };
+
+  // Connect mutation
+  const connectMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/discord/connect', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Connected!",
+        description: "🤖 Discord bot connected! Check logs for details.",
+      });
+      setBotToken(""); // Clear token from input for security
+      queryClient.invalidateQueries({ queryKey: ['/api/discord/config'] });
+    },
+    onError: (error: any) => {
+      const errorMsg = error.message || "Failed to connect";
+      let description = "❌ Connection failed";
+      
+      if (errorMsg.includes("TOKEN") || errorMsg.includes("INVALID") || errorMsg.includes("UNAUTHORIZED")) {
+        description = "❌ Invalid Discord bot token - please check your token";
+      } else if (errorMsg.includes("MISSING") || errorMsg.includes("ACCESS")) {
+        description = "❌ Bot missing required permissions";
+      }
+      
+      toast({
+        title: "Connection Failed",
+        description: description,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Disconnect mutation
+  const disconnectMutation = useMutation({
+    mutationFn: () => apiRequest('/api/discord/disconnect', {
+      method: 'POST',
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Disconnected",
+        description: "Discord bot has been disconnected",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/discord/config'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to disconnect",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update settings mutation
+  const updateSettingsMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/discord/config', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/discord/config'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update settings",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleConnect = () => {
-    if (!botToken.trim()) {
+    // If we have a stored token and no new token entered, use the stored one
+    if (!botToken.trim() && !typedConfig?.hasToken) {
       toast({
         title: "Error",
         description: "Please enter a Discord bot token",
@@ -39,20 +151,21 @@ export default function DiscordBot() {
       return;
     }
 
-    setIsConnected(true);
-    toast({
-      title: "Success",
-      description: "Discord bot token connected!",
-    });
+    const connectData: any = {
+      autoStart,
+      logCommands,
+    };
+    
+    // Only include token if a new one was entered
+    if (botToken.trim()) {
+      connectData.token = botToken;
+    }
+
+    connectMutation.mutate(connectData);
   };
 
   const handleDisconnect = () => {
-    setIsConnected(false);
-    toast({
-      title: "Disconnected",
-      description: "Discord bot has been disconnected",
-      variant: "destructive"
-    });
+    disconnectMutation.mutate();
   };
 
   const copyToken = () => {
@@ -97,10 +210,11 @@ export default function DiscordBot() {
                     <Input
                       id="token"
                       type={showToken ? "text" : "password"}
-                      placeholder="Enter your Discord bot token"
+                      placeholder={typedConfig?.hasToken ? "Token configured (enter new to change)" : "Enter your Discord bot token"}
                       value={botToken}
                       onChange={(e) => setBotToken(e.target.value)}
                       className="pr-20"
+                      disabled={isLoading}
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
                       <Button
@@ -137,7 +251,8 @@ export default function DiscordBot() {
                 <Switch
                   id="auto-start"
                   checked={autoStart}
-                  onCheckedChange={setAutoStart}
+                  onCheckedChange={handleAutoStartChange}
+                  disabled={isLoading || updateSettingsMutation.isPending}
                 />
               </div>
 
@@ -149,20 +264,29 @@ export default function DiscordBot() {
                 <Switch
                   id="log-commands"
                   checked={logCommands}
-                  onCheckedChange={setLogCommands}
+                  onCheckedChange={handleLogCommandsChange}
+                  disabled={isLoading || updateSettingsMutation.isPending}
                 />
               </div>
 
               <div className="flex gap-2 pt-4">
                 {!isConnected ? (
-                  <Button onClick={handleConnect} className="gradient-gaming glow-primary">
+                  <Button 
+                    onClick={handleConnect} 
+                    className="gradient-gaming glow-primary"
+                    disabled={connectMutation.isPending || isLoading}
+                  >
                     <Bot className="w-4 h-4 mr-2" />
-                    Connect Bot
+                    {connectMutation.isPending ? "Connecting..." : typedConfig?.hasToken && !botToken.trim() ? "Reconnect Bot" : "Connect Bot"}
                   </Button>
                 ) : (
-                  <Button onClick={handleDisconnect} variant="destructive">
+                  <Button 
+                    onClick={handleDisconnect} 
+                    variant="destructive"
+                    disabled={disconnectMutation.isPending || isLoading}
+                  >
                     <XCircle className="w-4 h-4 mr-2" />
-                    Disconnect Bot
+                    {disconnectMutation.isPending ? "Disconnecting..." : "Disconnect Bot"}
                   </Button>
                 )}
                 <Button variant="outline" asChild>
@@ -190,15 +314,15 @@ export default function DiscordBot() {
               </div>
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <span className="text-sm font-medium">Guilds Connected</span>
-                <span className="text-sm font-mono">{isConnected ? "1" : "0"}</span>
+                <span className="text-sm font-mono">{typedConfig?.guildCount || 0}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <span className="text-sm font-medium">Commands Executed</span>
-                <span className="text-sm font-mono">{isConnected ? "47" : "0"}</span>
+                <span className="text-sm font-mono">{typedConfig?.commandsExecuted || 0}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                 <span className="text-sm font-medium">Uptime</span>
-                <span className="text-sm font-mono">{isConnected ? "2h 34m" : "0m"}</span>
+                <span className="text-sm font-mono">{typedConfig?.uptime || "0m"}</span>
               </div>
             </div>
           </Card>

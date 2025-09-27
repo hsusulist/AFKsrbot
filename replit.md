@@ -89,7 +89,7 @@ The application follows a hub-and-spoke navigation pattern with these main secti
 
 ## Recent Changes
 
-### September 27, 2025: Replit Environment Setup
+### September 27, 2025: Replit Environment Setup and Bug Fixes
 - Successfully imported GitHub repository to Replit environment
 - Installed all required dependencies including concurrently, Express.js, Discord.js, and Mineflayer
 - Configured full-stack development with concurrent frontend/backend execution
@@ -97,6 +97,15 @@ The application follows a hub-and-spoke navigation pattern with these main secti
 - Backend runs on port 3001 with CORS configured for Replit environment
 - Deployment configuration set for autoscale production deployment
 - Verified complete application functionality with screenshot testing
+
+**Critical Bug Fixes Implemented:**
+- **Discord Token Persistence**: Fixed DiscordBot.tsx to use backend APIs instead of local state
+- **Token Reconnection**: Added ability to reconnect with stored tokens without re-entering
+- **Settings Persistence**: Implemented PATCH endpoint for autoStart/logCommands persistence  
+- **Connection Logic**: Fixed Discord bot connection to use real Discord.js integration
+- **Console & Logs**: Verified all endpoints working correctly for command execution and log viewing
+- **UI Improvements**: Added proper loading states, disabled controls, and better user feedback
+- **Security**: Ensured tokens are never exposed in API responses while maintaining functionality
 
 ### Backend Integration Features
 - **Discord Bot Management**: Complete Discord.js integration with slash commands

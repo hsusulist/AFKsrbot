@@ -58,9 +58,13 @@ export function createRoutes(storage: IStorage) {
 
   router.post('/api/discord/connect', async (req, res) => {
     try {
-      const { token, autoStart, logCommands } = insertDiscordBotConfigSchema.parse(req.body);
+      const { token, autoStart, logCommands } = req.body;
       
-      if (!token) {
+      // Get existing config to check for stored token
+      const existingConfig = await storage.getDiscordConfig();
+      const finalToken = token || existingConfig?.token;
+      
+      if (!finalToken) {
         return res.status(400).json({ error: 'Discord bot token is required' });
       }
 
@@ -146,12 +150,12 @@ export function createRoutes(storage: IStorage) {
         
         // Update config with connection status
         const config = await storage.saveDiscordConfig({
-          token,
+          token: finalToken,
           isConnected: true,
-          autoStart,
-          logCommands,
+          autoStart: autoStart !== undefined ? autoStart : existingConfig?.autoStart || false,
+          logCommands: logCommands !== undefined ? logCommands : existingConfig?.logCommands || true,
           guildCount: discordBot.guilds.cache.size,
-          commandsExecuted: 0,
+          commandsExecuted: existingConfig?.commandsExecuted || 0,
           uptime: '0m',
           lastConnected: new Date().toISOString(),
         });
@@ -408,13 +412,56 @@ export function createRoutes(storage: IStorage) {
       });
 
       // Login to Discord
-      await discordBot.login(token);
+      await discordBot.login(finalToken);
       
       res.json({ success: true, message: 'Discord bot connection started' });
       
     } catch (error) {
       await addLog('discord', 'error', `Failed to connect Discord bot: ${error.message}`);
       res.status(500).json({ error: 'Failed to connect Discord bot', details: error.message });
+    }
+  });
+
+  router.patch('/api/discord/config', async (req, res) => {
+    try {
+      const updates = req.body;
+      
+      // Only allow specific fields to be updated
+      const allowedUpdates = ['autoStart', 'logCommands'];
+      const filteredUpdates: any = {};
+      
+      for (const key of allowedUpdates) {
+        if (updates[key] !== undefined) {
+          filteredUpdates[key] = updates[key];
+        }
+      }
+      
+      if (Object.keys(filteredUpdates).length === 0) {
+        return res.status(400).json({ error: 'No valid updates provided' });
+      }
+
+      const currentConfig = await storage.getDiscordConfig();
+      if (!currentConfig) {
+        return res.status(404).json({ error: 'Discord config not found' });
+      }
+
+      const updatedConfig = await storage.updateDiscordConfig(filteredUpdates);
+      
+      // Return only non-sensitive data
+      const safeConfig = {
+        isConnected: updatedConfig.isConnected,
+        autoStart: updatedConfig.autoStart,
+        logCommands: updatedConfig.logCommands,
+        guildCount: updatedConfig.guildCount,
+        commandsExecuted: updatedConfig.commandsExecuted,
+        uptime: updatedConfig.uptime,
+        lastConnected: updatedConfig.lastConnected,
+        hasToken: !!updatedConfig.token,
+      };
+      
+      res.json(safeConfig);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update Discord config' });
     }
   });
 
