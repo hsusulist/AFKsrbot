@@ -953,8 +953,58 @@ export function createRoutes(storage: IStorage) {
       });
 
       minecraftBot.on('error', async (err) => {
-        await addLog('minecraft', 'error', `Minecraft bot error: ${err.message}`);
         console.error('Minecraft bot error:', err);
+        
+        // Handle different types of connection errors with specific messages
+        let errorMessage = '';
+        let errorType = 'error';
+        
+        switch (err.code) {
+          case 'ECONNRESET':
+            errorMessage = '🔌 Connection lost - server may be offline or restarted';
+            errorType = 'warn';
+            break;
+          case 'ECONNREFUSED':
+            errorMessage = '🚫 Connection refused - check server IP and port';
+            break;
+          case 'ENOTFOUND':
+            errorMessage = '🌐 Server not found - check server address';
+            break;
+          case 'ETIMEDOUT':
+            errorMessage = '⏰ Connection timed out - server may be slow or unreachable';
+            break;
+          case 'EHOSTUNREACH':
+            errorMessage = '🚀 Host unreachable - check network connection';
+            break;
+          default:
+            if (err.message.includes('Invalid username')) {
+              errorMessage = '👤 Invalid username - please check username format';
+            } else if (err.message.includes('authentication')) {
+              errorMessage = '🔐 Authentication failed - check password';
+            } else if (err.message.includes('version')) {
+              errorMessage = '📦 Version mismatch - try different Minecraft version';
+            } else {
+              errorMessage = `❌ Connection error: ${err.message}`;
+            }
+            break;
+        }
+        
+        await addLog('minecraft', errorType, errorMessage);
+        
+        // Update connection status when error occurs
+        await storage.updateMinecraftConfig({ 
+          isConnected: false,
+          ping: 'N/A',
+          uptime: 'N/A',
+          playersOnline: '0/0'
+        });
+        
+        await storage.updateBotStatus({
+          discordConnected: (await storage.getBotStatus())?.discordConnected || false,
+          minecraftConnected: false,
+          lastActivity: new Date().toISOString(),
+          totalUptime: (await storage.getBotStatus())?.totalUptime || '0m',
+        });
       });
 
       minecraftBot.on('end', async () => {

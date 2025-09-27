@@ -11,27 +11,27 @@
   },
   "minecraftConfig": {
     "id": "minecraft_server",
-    "serverIP": "test-server.example.com",
+    "serverIP": "teddysmpp.aternos.me:39018",
     "serverPort": "39018",
-    "username": "TestBot123",
+    "username": "test",
     "password": "bot123",
     "shouldRegister": true,
     "version": "1.20.4",
     "platform": "java",
-    "autoReconnect": false,
+    "autoReconnect": true,
     "mode24_7": true,
     "useWhitelist": false,
-    "isConnected": false,
+    "isConnected": true,
     "ping": "0ms",
     "uptime": "0m",
-    "playersOnline": "1/100",
-    "lastConnected": "2025-09-27T10:42:30.760Z"
+    "playersOnline": "2/100",
+    "lastConnected": "2025-09-27T10:51:47.448Z"
   },
   "botStatus": {
     "id": "bot_status",
     "discordConnected": false,
     "minecraftConnected": true,
-    "lastActivity": "2025-09-27T10:42:30.760Z",
+    "lastActivity": "2025-09-27T10:51:47.448Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [
@@ -103,25 +103,144 @@
       "message": "Failed to connect Discord bot: An invalid token was provided."
     },
     {
-      "id": "175897011298326ooaiwib",
-      "timestamp": "2025-09-27T10:48:32.983Z",
+      "id": "1758970259647fg8pcuw29",
+      "timestamp": "2025-09-27T10:50:59.647Z",
       "type": "minecraft",
       "level": "info",
       "message": "🔄 Auto-reconnecting in 0 seconds..."
     },
     {
-      "id": "1758970112984il779hsuu",
-      "timestamp": "2025-09-27T10:48:32.984Z",
+      "id": "1758970259648xob3czsq5",
+      "timestamp": "2025-09-27T10:50:59.648Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
     },
     {
-      "id": "1758970143744w0o1yvycf",
-      "timestamp": "2025-09-27T10:49:03.744Z",
+      "id": "1758970306166nyti8msi0",
+      "timestamp": "2025-09-27T10:51:46.166Z",
       "type": "minecraft",
       "level": "info",
-      "message": "💾 Server configuration saved"
+      "message": "Parsed server address: teddysmpp.aternos.me:39018"
+    },
+    {
+      "id": "175897030616622ar9hx9z",
+      "timestamp": "2025-09-27T10:51:46.166Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Attempting to register with username: test"
+    },
+    {
+      "id": "1758970307436j5qnujsf4",
+      "timestamp": "2025-09-27T10:51:47.436Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 test joined the game"
+    },
+    {
+      "id": "17589703074371mqyl2bvz",
+      "timestamp": "2025-09-27T10:51:47.437Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 test joined the server"
+    },
+    {
+      "id": "1758970307437gxq7nj568",
+      "timestamp": "2025-09-27T10:51:47.437Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 hsusulist joined the server"
+    },
+    {
+      "id": "1758970307444g6faqx5ko",
+      "timestamp": "2025-09-27T10:51:47.444Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🎮 Bot test joined the server!"
+    },
+    {
+      "id": "1758970307446oln8wi5ap",
+      "timestamp": "2025-09-27T10:51:47.446Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Attempting to register with password"
+    },
+    {
+      "id": "17589703074462msnbskw9",
+      "timestamp": "2025-09-27T10:51:47.446Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 §9§2§0§2§d§m§d§l joined the server"
+    },
+    {
+      "id": "17589703074473e9083lyx",
+      "timestamp": "2025-09-27T10:51:47.447Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 §k§k§a§6§3§5§l§b joined the server"
+    },
+    {
+      "id": "17589703076064ymuy5a73",
+      "timestamp": "2025-09-27T10:51:47.606Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 You already have registered this username!"
+    },
+    {
+      "id": "1758970309306sspzlkq8a",
+      "timestamp": "2025-09-27T10:51:49.306Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Please, login with the command: /login <password>"
+    },
+    {
+      "id": "1758970309343yo7v6c3fw",
+      "timestamp": "2025-09-27T10:51:49.343Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 §9§2§0§2§d§m§d§l left the server"
+    },
+    {
+      "id": "17589703093441uchtortr",
+      "timestamp": "2025-09-27T10:51:49.344Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 §k§k§a§6§3§5§l§b left the server"
+    },
+    {
+      "id": "1758970309450eor3lwmag",
+      "timestamp": "2025-09-27T10:51:49.450Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "📦 Inventory updated: 0 items"
+    },
+    {
+      "id": "1758970312448hre8sb4f3",
+      "timestamp": "2025-09-27T10:51:52.448Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🤖 Anti-AFK behaviors activated"
+    },
+    {
+      "id": "1758970314309xwoagzhd6",
+      "timestamp": "2025-09-27T10:51:54.309Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Please, login with the command: /login <password>"
+    },
+    {
+      "id": "17589703193075ai7lnebq",
+      "timestamp": "2025-09-27T10:51:59.307Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Please, login with the command: /login <password>"
+    },
+    {
+      "id": "1758970324306er8lo9q69",
+      "timestamp": "2025-09-27T10:52:04.307Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Please, login with the command: /login <password>"
     }
   ],
   "inventory": []
