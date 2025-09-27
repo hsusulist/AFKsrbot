@@ -20,19 +20,19 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Start application"
+args = "AFK Bot Dashboard"
 
 [[workflows.workflow]]
-name = "Start application"
+name = "AFK Bot Dashboard"
 author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[ports]]
 localPort = 3001
@@ -41,10 +41,6 @@ externalPort = 3001
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 34095
-externalPort = 6000
 
 [[ports]]
 localPort = 38587
