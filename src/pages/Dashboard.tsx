@@ -38,9 +38,9 @@ export default function Dashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Active Users"
-            value="1,247"
-            description="Online members"
+            title="Bot Health"
+            value="100%"
+            description="Health & Food levels"
             icon={<Users className="w-6 h-6 text-primary" />}
             trend="up"
           />

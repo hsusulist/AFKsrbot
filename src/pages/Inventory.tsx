@@ -63,12 +63,12 @@ export default function Inventory() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
-            <p className="text-muted-foreground">Manage player items and resources</p>
+            <h1 className="text-3xl font-bold text-foreground">Bot Inventory</h1>
+            <p className="text-muted-foreground">View your AFKBot's current inventory items</p>
           </div>
-          <Button className="gradient-gaming glow-primary">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Item
+          <Button variant="outline">
+            <Package className="w-4 h-4 mr-2" />
+            Refresh
           </Button>
         </div>
 
@@ -132,10 +132,11 @@ export default function Inventory() {
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" className="flex-1">
                   <Edit className="w-3 h-3 mr-1" />
-                  Edit
+                  Drop Item
                 </Button>
-                <Button size="sm" variant="outline" className="text-error hover:text-error">
+                <Button size="sm" variant="outline" className="text-primary hover:text-primary">
                   <Trash2 className="w-3 h-3" />
+                  Use Item
                 </Button>
               </div>
             </Card>

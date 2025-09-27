@@ -151,6 +151,34 @@ export default function ServerConfig() {
                 </p>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="version">Minecraft Version</Label>
+                  <select 
+                    id="version"
+                    className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md text-sm"
+                    defaultValue="1.20.4"
+                  >
+                    <option value="1.20.4">1.20.4</option>
+                    <option value="1.20.1">1.20.1</option>
+                    <option value="1.19.4">1.19.4</option>
+                    <option value="1.18.2">1.18.2</option>
+                    <option value="1.17.1">1.17.1</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="platform">Platform</Label>
+                  <select 
+                    id="platform"
+                    className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md text-sm"
+                    defaultValue="java"
+                  >
+                    <option value="java">Java Edition</option>
+                    <option value="bedrock">Bedrock Edition</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
                   <div>
@@ -160,6 +188,16 @@ export default function ServerConfig() {
                   <Switch
                     checked={autoReconnect}
                     onCheckedChange={setAutoReconnect}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">24/7 Mode</Label>
+                    <p className="text-xs text-muted-foreground">Keep bot running continuously</p>
+                  </div>
+                  <Switch
+                    defaultChecked={true}
                   />
                 </div>
 

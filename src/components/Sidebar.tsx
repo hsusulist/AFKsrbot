@@ -14,10 +14,12 @@ import {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
-  { name: "Bot Control", href: "/bot", icon: Bot },
+  { name: "Discord Bot", href: "/discord-bot", icon: Bot },
   { name: "Server Config", href: "/server", icon: Server },
   { name: "Inventory", href: "/inventory", icon: Package },
-  { name: "Logs", href: "/logs", icon: FileText },
+  { name: "Discord Logs", href: "/discord-logs", icon: FileText },
+  { name: "Minecraft Logs", href: "/minecraft-logs", icon: Activity },
+  { name: "Console", href: "/console", icon: Shield },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "How to Use", href: "/how-to-use", icon: HelpCircle },
 ];
