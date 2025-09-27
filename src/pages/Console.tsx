@@ -26,40 +26,7 @@ interface ConsoleEntry {
   user?: string;
 }
 
-const initialConsoleEntries: ConsoleEntry[] = [
-  {
-    id: 1,
-    timestamp: "14:35:22",
-    type: "info",
-    content: "Console connection established"
-  },
-  {
-    id: 2,
-    timestamp: "14:35:25",
-    type: "command",
-    content: "/list",
-    user: "Admin"
-  },
-  {
-    id: 3,
-    timestamp: "14:35:26",
-    type: "response",
-    content: "There are 3 of a max of 20 players online: AFKBot, Player123, Player456"
-  },
-  {
-    id: 4,
-    timestamp: "14:35:45",
-    type: "command",
-    content: "/gamemode creative Player123",
-    user: "Admin"
-  },
-  {
-    id: 5,
-    timestamp: "14:35:46",
-    type: "response",
-    content: "Set Player123's game mode to Creative Mode"
-  }
-];
+const initialConsoleEntries: ConsoleEntry[] = [];
 
 export default function Console() {
   const [command, setCommand] = useState("");
@@ -67,18 +34,9 @@ export default function Console() {
   const [isConnected, setIsConnected] = useState(true);
   const { toast } = useToast();
 
-  const executeCommand = () => {
+  const executeCommand = async () => {
     if (!command.trim()) return;
     
-    if (!isConnected) {
-      toast({
-        title: "Error",
-        description: "Console is not connected to the server",
-        variant: "destructive"
-      });
-      return;
-    }
-
     const newCommand: ConsoleEntry = {
       id: consoleEntries.length + 1,
       timestamp: new Date().toLocaleTimeString("en-US", { 
@@ -92,12 +50,19 @@ export default function Console() {
       user: "Dashboard"
     };
 
-    // Simulate response based on command
-    let response: ConsoleEntry;
-    const cmd = command.toLowerCase();
-    
-    if (cmd.startsWith("/list")) {
-      response = {
+    setConsoleEntries(prev => [...prev, newCommand]);
+
+    try {
+      // Send actual command to bot
+      const response = await fetch('/api/console/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: command.startsWith('/') ? command.slice(1) : command })
+      });
+
+      const result = await response.json();
+      
+      const responseEntry: ConsoleEntry = {
         id: consoleEntries.length + 2,
         timestamp: new Date().toLocaleTimeString("en-US", { 
           hour12: false, 
@@ -105,35 +70,20 @@ export default function Console() {
           minute: "2-digit", 
           second: "2-digit" 
         }),
-        type: "response",
-        content: "There are 3 of a max of 20 players online: AFKBot, Player123, Player456"
+        type: result.success ? "response" : "error",
+        content: result.response || result.error || "Command executed"
       };
-    } else if (cmd.startsWith("/tp")) {
-      response = {
-        id: consoleEntries.length + 2,
-        timestamp: new Date().toLocaleTimeString("en-US", { 
-          hour12: false, 
-          hour: "2-digit", 
-          minute: "2-digit", 
-          second: "2-digit" 
-        }),
-        type: "response",
-        content: "Teleported successfully"
-      };
-    } else if (cmd.startsWith("/give")) {
-      response = {
-        id: consoleEntries.length + 2,
-        timestamp: new Date().toLocaleTimeString("en-US", { 
-          hour12: false, 
-          hour: "2-digit", 
-          minute: "2-digit", 
-          second: "2-digit" 
-        }),
-        type: "response",
-        content: "Gave items successfully"
-      };
-    } else if (cmd.startsWith("/ban") || cmd.startsWith("/kick")) {
-      response = {
+
+      setConsoleEntries(prev => [...prev, responseEntry]);
+      
+      toast({
+        title: result.success ? "Command Sent" : "Command Failed", 
+        description: result.success ? "🎮 Command executed in game!" : "❌ Bot is not connected to server",
+        variant: result.success ? "default" : "destructive"
+      });
+
+    } catch (error) {
+      const errorEntry: ConsoleEntry = {
         id: consoleEntries.length + 2,
         timestamp: new Date().toLocaleTimeString("en-US", { 
           hour12: false, 
@@ -142,29 +92,18 @@ export default function Console() {
           second: "2-digit" 
         }),
         type: "error",
-        content: "You do not have permission to use this command"
+        content: "Failed to send command - Bot not connected"
       };
-    } else {
-      response = {
-        id: consoleEntries.length + 2,
-        timestamp: new Date().toLocaleTimeString("en-US", { 
-          hour12: false, 
-          hour: "2-digit", 
-          minute: "2-digit", 
-          second: "2-digit" 
-        }),
-        type: "response",
-        content: "Command executed"
-      };
+
+      setConsoleEntries(prev => [...prev, errorEntry]);
+      
+      toast({
+        title: "Connection Error",
+        description: "❌ Cannot send command - Bot not connected to server",
+        variant: "destructive"
+      });
     }
 
-    setConsoleEntries([...consoleEntries, newCommand, response]);
-    setCommand("");
-    
-    toast({
-      title: "Command Executed",
-      description: `Executed: ${command}`,
-    });
   };
 
   const clearConsole = () => {

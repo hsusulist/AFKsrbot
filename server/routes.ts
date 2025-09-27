@@ -512,12 +512,13 @@ export function createRoutes(storage: IStorage) {
         minecraftBot = null;
       }
 
-      // Create Minecraft bot
+      // Create Minecraft bot with cracked/offline mode
       const botOptions: any = {
         host: serverHost,
         port: parseInt(serverPort),
         username: config.username,
         version: config.version,
+        auth: 'offline', // Enable cracked/offline mode
       };
 
       // Add auth if password provided
@@ -610,9 +611,47 @@ export function createRoutes(storage: IStorage) {
       
       // Setup event handlers
       minecraftBot.on('spawn', async () => {
-        await addLog('minecraft', 'info', `🎮 Minecraft bot spawned as ${config.username}`);
+        await addLog('minecraft', 'info', `🎮 Bot ${config.username} joined the server!`);
         
-        // Handle password login/register
+        // Update inventory when spawned
+        setTimeout(async () => {
+          try {
+            const items = minecraftBot.inventory.items().map(item => ({
+              id: Date.now() + Math.random(),
+              name: item.name,
+              count: item.count,
+              slot: minecraftBot.inventory.slots.indexOf(item)
+            }));
+            await storage.updateInventory(items);
+            await addLog('minecraft', 'info', `📦 Inventory updated: ${items.length} items`);
+          } catch (err) {
+            await addLog('minecraft', 'warn', `Failed to update inventory: ${err.message}`);
+          }
+        }, 2000);
+      });
+
+      // Log all chat messages from server
+      minecraftBot.on('message', async (message) => {
+        const chatMsg = message.toString();
+        if (chatMsg && chatMsg.trim()) {
+          await addLog('minecraft', 'info', `💬 ${chatMsg}`);
+          
+          // Send to Discord log channel if configured
+          if (logChannel && discordBot) {
+            try {
+              const channel = await discordBot.channels.fetch(logChannel);
+              if (channel && channel.isTextBased() && 'send' in channel) {
+                await channel.send(`\`\`\`💬 ${chatMsg}\`\`\``);
+              }
+            } catch (err) {
+              console.log('Failed to send to Discord log channel:', err.message);
+            }
+          }
+        }
+      });
+
+      // Handle password login/register and start behaviors after spawn
+      minecraftBot.once('spawn', async () => {
         if (config.password) {
           if (config.shouldRegister) {
             minecraftBot.chat(`/register ${config.password} ${config.password}`);

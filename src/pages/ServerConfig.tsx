@@ -77,15 +77,26 @@ export default function ServerConfig() {
     }),
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Connected to Minecraft server successfully!",
+        title: "Connected!",
+        description: "🎮 Bot connected to server! Check Minecraft Logs to see activity.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/minecraft/config'] });
     },
     onError: (error: any) => {
+      const errorMsg = error.message || "Failed to connect";
+      let description = "❌ Connection failed";
+      
+      if (errorMsg.includes("ENOTFOUND") || errorMsg.includes("getaddrinfo")) {
+        description = "❌ Server IP is invalid or server is offline";
+      } else if (errorMsg.includes("ECONNREFUSED") || errorMsg.includes("ECONNRESET")) {
+        description = "❌ Server port is invalid or server is not accepting connections";
+      } else if (errorMsg.includes("timeout")) {
+        description = "❌ Connection timeout - server may be slow to respond";
+      }
+      
       toast({
         title: "Connection Failed",
-        description: error.message || "Failed to connect to Minecraft server",
+        description: description,
         variant: "destructive",
       });
     },
