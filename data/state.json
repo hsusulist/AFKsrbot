@@ -31,8 +31,8 @@
   "botStatus": {
     "id": "bot_status",
     "discordConnected": false,
-    "minecraftConnected": true,
-    "lastActivity": "2025-09-27T14:30:46.309Z",
+    "minecraftConnected": false,
+    "lastActivity": "2025-09-27T22:55:49.306Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [
@@ -146,44 +146,19 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "1759013611110ktav9s52l",
-      "timestamp": "2025-09-27T22:53:31.110Z",
+      "id": "1759013749306qhbp500aj",
+      "timestamp": "2025-09-27T22:55:49.306Z",
       "type": "minecraft",
       "level": "info",
-      "message": "🔄 Auto-reconnecting in 10 seconds..."
+      "message": "🔄 Auto-reconnecting in 0 seconds..."
     },
     {
-      "id": "1759013621114yv8wkrbwf",
-      "timestamp": "2025-09-27T22:53:41.114Z",
+      "id": "17590137493070hthkevvw",
+      "timestamp": "2025-09-27T22:55:49.307Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
     }
   ],
-  "inventory": [
-    {
-      "id": 1758970416975.3809,
-      "name": "stone_sword",
-      "count": 1,
-      "slot": 36
-    },
-    {
-      "id": 1758970416975.7124,
-      "name": "stone_shovel",
-      "count": 1,
-      "slot": 37
-    },
-    {
-      "id": 1758970416975.1956,
-      "name": "stone_pickaxe",
-      "count": 1,
-      "slot": 38
-    },
-    {
-      "id": 1758970416975.5613,
-      "name": "stone_axe",
-      "count": 1,
-      "slot": 39
-    }
-  ]
+  "inventory": []
 }

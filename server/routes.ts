@@ -656,7 +656,7 @@ export function createRoutes(storage: IStorage) {
       
       // AFKsrbot anti-AFK behaviors
       const startAntiAFKBehaviors = () => {
-        // Random movement every 30-60 seconds
+        // Random movement every 3-8 seconds (much more active like a real player)
         const movementInterval = setInterval(() => {
           if (!minecraftBot || !minecraftBot.entity) return;
           
@@ -672,16 +672,16 @@ export function createRoutes(storage: IStorage) {
           const action = randomActions[Math.floor(Math.random() * randomActions.length)];
           action();
           
-          // Stop action after short duration
+          // Stop action after short duration (instant response like normal player)
           setTimeout(() => {
             if (minecraftBot) {
               minecraftBot.clearControlStates();
             }
-          }, Math.random() * 2000 + 500); // 0.5-2.5 seconds
+          }, Math.random() * 1000 + 200); // 0.2-1.2 seconds (much faster)
           
-        }, Math.random() * 30000 + 30000); // 30-60 seconds
+        }, Math.random() * 5000 + 3000); // 3-8 seconds (much more frequent)
         
-        // Random looking around every 10-20 seconds
+        // Random looking around every 2-6 seconds (like an active player)
         const lookInterval = setInterval(() => {
           if (!minecraftBot || !minecraftBot.entity) return;
           
@@ -689,7 +689,7 @@ export function createRoutes(storage: IStorage) {
           const pitch = (Math.random() - 0.5) * 0.5; // Random vertical look
           minecraftBot.look(yaw, pitch);
           
-        }, Math.random() * 10000 + 10000); // 10-20 seconds
+        }, Math.random() * 4000 + 2000); // 2-6 seconds (much more frequent)
         
         // Health and food monitoring every 5 seconds
         const healthInterval = setInterval(async () => {
