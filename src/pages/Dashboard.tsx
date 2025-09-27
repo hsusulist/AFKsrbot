@@ -2,6 +2,9 @@ import Layout from "@/components/Layout";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   Users, 
   MessageSquare, 
@@ -10,10 +13,113 @@ import {
   Play, 
   Pause, 
   RotateCcw,
-  Activity
+  Activity,
+  XCircle
 } from "lucide-react";
 
 export default function Dashboard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Get Discord bot config and status
+  const { data: discordConfig, isLoading: discordLoading } = useQuery({
+    queryKey: ['/api/discord/config'],
+  });
+
+  // Get Minecraft bot config and status
+  const { data: minecraftConfig, isLoading: minecraftLoading } = useQuery({
+    queryKey: ['/api/minecraft/config'],
+  });
+
+  // Type the Discord config
+  const typedDiscordConfig = discordConfig as {
+    isConnected?: boolean;
+    guildCount?: number;
+    commandsExecuted?: number;
+    uptime?: string;
+    hasToken?: boolean;
+  } | undefined;
+
+  // Type the Minecraft config
+  const typedMinecraftConfig = minecraftConfig as {
+    isConnected?: boolean;
+    ping?: string;
+    uptime?: string;
+    playersOnline?: string;
+  } | undefined;
+
+  const isDiscordConnected = typedDiscordConfig?.isConnected || false;
+  const isMinecraftConnected = typedMinecraftConfig?.isConnected || false;
+
+  // Connect Discord bot mutation
+  const connectDiscordMutation = useMutation({
+    mutationFn: () => apiRequest('/api/discord/connect', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }),
+    onSuccess: () => {
+      toast({
+        title: "🎉 Bot Connected!",
+        description: "🤖 Discord bot is now online and ready for commands!",
+        duration: 5000,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/discord/config'] });
+    },
+    onError: (error: any) => {
+      const errorMsg = error.message || "Failed to connect";
+      let description = "❌ Connection failed";
+      
+      if (errorMsg.includes("TOKEN") || errorMsg.includes("INVALID") || errorMsg.includes("UNAUTHORIZED")) {
+        description = "❌ No valid Discord bot token found. Please go to Discord Bot page to add your token.";
+      }
+      
+      toast({
+        title: "Connection Failed",
+        description: description,
+        variant: "destructive",
+        duration: 5000,
+      });
+    },
+  });
+
+  // Disconnect Discord bot mutation
+  const disconnectDiscordMutation = useMutation({
+    mutationFn: () => apiRequest('/api/discord/disconnect', {
+      method: 'POST',
+    }),
+    onSuccess: () => {
+      toast({
+        title: "Bot Disconnected",
+        description: "Discord bot has been safely disconnected",
+        duration: 3000,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/discord/config'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to disconnect",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleConnect = () => {
+    if (!typedDiscordConfig?.hasToken) {
+      toast({
+        title: "Token Required",
+        description: "Please go to Discord Bot page to add your bot token first",
+        variant: "destructive"
+      });
+      return;
+    }
+    connectDiscordMutation.mutate();
+  };
+
+  const handleDisconnect = () => {
+    disconnectDiscordMutation.mutate();
+  };
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -24,13 +130,30 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Monitor and control your Discord bot</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            {!isDiscordConnected ? (
+              <Button 
+                onClick={handleConnect} 
+                size="sm" 
+                className="gradient-gaming glow-primary"
+                disabled={connectDiscordMutation.isPending || discordLoading}
+              >
+                <Bot className="w-4 h-4 mr-2" />
+                {connectDiscordMutation.isPending ? "Connecting..." : "Connect Bot"}
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleDisconnect} 
+                variant="destructive"
+                size="sm"
+                disabled={disconnectDiscordMutation.isPending || discordLoading}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                {disconnectDiscordMutation.isPending ? "Disconnecting..." : "Disconnect Bot"}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" disabled>
               <RotateCcw className="w-4 h-4 mr-2" />
               Restart Bot
-            </Button>
-            <Button size="sm" className="gradient-gaming glow-primary">
-              <Play className="w-4 h-4 mr-2" />
-              Start Bot
             </Button>
           </div>
         </div>
@@ -38,31 +161,32 @@ export default function Dashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Bot Health"
-            value="20/20"
-            description="Health & Hunger"
+            title="Discord Guilds"
+            value={typedDiscordConfig?.guildCount?.toString() || "0"}
+            description="Connected servers"
             icon={<Users className="w-6 h-6 text-primary" />}
-            trend="up"
+            trend={isDiscordConnected ? "up" : "neutral"}
           />
           <StatCard
             title="Bot Commands"
-            value="0"
+            value={typedDiscordConfig?.commandsExecuted?.toString() || "0"}
             description="Commands executed today"
             icon={<MessageSquare className="w-6 h-6 text-accent" />}
             trend="neutral"
           />
           <StatCard
-            title="Bot Uptime"
-            value="Offline"
-            description="Not connected to server"
-            icon={<Server className="w-6 h-6 text-muted-foreground" />}
-            trend="neutral"
+            title="Discord Uptime"
+            value={isDiscordConnected ? (typedDiscordConfig?.uptime || "Online") : "Offline"}
+            description={isDiscordConnected ? "Discord bot connected" : "Not connected to Discord"}
+            icon={<Server className={`w-6 h-6 ${isDiscordConnected ? 'text-success' : 'text-muted-foreground'}`} />}
+            trend={isDiscordConnected ? "up" : "neutral"}
           />
           <StatCard
             title="Bot Status"
-            value="Disconnected"
-            description="Ready to connect"
-            icon={<Bot className="w-6 h-6 text-muted-foreground" />}
+            value={isDiscordConnected ? "Connected" : "Disconnected"}
+            description={isDiscordConnected ? "Ready for commands" : "Ready to connect"}
+            icon={<Bot className={`w-6 h-6 ${isDiscordConnected ? 'text-success' : 'text-muted-foreground'}`} />}
+            trend={isDiscordConnected ? "up" : "neutral"}
           />
         </div>
 
