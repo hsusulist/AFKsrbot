@@ -27,15 +27,22 @@
   "consoleCommands": [],
   "logs": [
     {
-      "id": "17589585805171whfan5zm",
-      "timestamp": "2025-09-27T07:36:20.517Z",
+      "id": "1758958709286nktwa5gom",
+      "timestamp": "2025-09-27T07:38:29.286Z",
       "type": "minecraft",
       "level": "info",
       "message": "🔄 Auto-reconnecting in 10 seconds..."
     },
     {
-      "id": "1758958590519eky74jeoj",
-      "timestamp": "2025-09-27T07:36:30.519Z",
+      "id": "1758958719001l8a1cizs4",
+      "timestamp": "2025-09-27T07:38:39.001Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Attempting to reconnect..."
+    },
+    {
+      "id": "1758958719286pzkdnforv",
+      "timestamp": "2025-09-27T07:38:39.286Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
