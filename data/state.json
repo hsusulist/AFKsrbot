@@ -5,55 +5,179 @@
     "serverIP": "teddysmpp.aternos.me",
     "serverPort": "39018",
     "username": "test",
-    "shouldRegister": false,
+    "password": "bot123",
+    "shouldRegister": true,
     "version": "1.20.4",
     "platform": "java",
     "autoReconnect": true,
     "mode24_7": true,
     "useWhitelist": false,
-    "isConnected": false,
+    "isConnected": true,
     "ping": "0ms",
     "uptime": "0m",
     "playersOnline": "2/100",
-    "lastConnected": "2025-09-27T07:35:20.607Z"
+    "lastConnected": "2025-09-27T07:52:21.701Z"
   },
   "botStatus": {
     "id": "bot_status",
     "discordConnected": false,
     "minecraftConnected": true,
-    "lastActivity": "2025-09-27T07:35:20.607Z",
+    "lastActivity": "2025-09-27T07:52:21.701Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [],
   "logs": [
     {
-      "id": "1758958833142umzutc0if",
-      "timestamp": "2025-09-27T07:40:33.142Z",
+      "id": "1758959529389v0a3wmbdp",
+      "timestamp": "2025-09-27T07:52:09.389Z",
       "type": "minecraft",
       "level": "info",
-      "message": "🔄 Auto-reconnecting in 10 seconds..."
+      "message": "🔄 Auto-reconnecting in 0 seconds..."
     },
     {
-      "id": "1758958842313x7efb9ozt",
-      "timestamp": "2025-09-27T07:40:42.313Z",
+      "id": "1758959529390davrc9s00",
+      "timestamp": "2025-09-27T07:52:09.390Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
     },
     {
-      "id": "17589588425117fhcsbyz7",
-      "timestamp": "2025-09-27T07:40:42.511Z",
+      "id": "1758959540321yq0g9pa7m",
+      "timestamp": "2025-09-27T07:52:20.321Z",
       "type": "minecraft",
       "level": "info",
-      "message": "Attempting to reconnect..."
+      "message": "Attempting to register with username: test"
     },
     {
-      "id": "1758958843143cak00ao0o",
-      "timestamp": "2025-09-27T07:40:43.143Z",
+      "id": "1758959541668pxb54dsz1",
+      "timestamp": "2025-09-27T07:52:21.668Z",
       "type": "minecraft",
       "level": "info",
-      "message": "Attempting to reconnect..."
+      "message": "💬 [PvPManager] You are protected from PvP for 59 seconds"
+    },
+    {
+      "id": "1758959541669lh8xut28i",
+      "timestamp": "2025-09-27T07:52:21.669Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "<PvPManager> You are protected from PvP for 59 seconds"
+    },
+    {
+      "id": "1758959541670y23kvzphx",
+      "timestamp": "2025-09-27T07:52:21.670Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 test joined the game"
+    },
+    {
+      "id": "1758959541672vzvjd1lnq",
+      "timestamp": "2025-09-27T07:52:21.672Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 test joined the server"
+    },
+    {
+      "id": "1758959541672l4rpy15um",
+      "timestamp": "2025-09-27T07:52:21.672Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 hsusulist joined the server"
+    },
+    {
+      "id": "17589595416999exdv2ae7",
+      "timestamp": "2025-09-27T07:52:21.699Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🎮 Bot test joined the server!"
+    },
+    {
+      "id": "1758959541700tyw31p8xo",
+      "timestamp": "2025-09-27T07:52:21.700Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Attempting to register with password"
+    },
+    {
+      "id": "1758959541898lygf1hhk1",
+      "timestamp": "2025-09-27T07:52:21.898Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Successfully registered!"
+    },
+    {
+      "id": "1758959541899igbxfh290",
+      "timestamp": "2025-09-27T07:52:21.899Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Successful login!"
+    },
+    {
+      "id": "1758959541960zkdrckgc6",
+      "timestamp": "2025-09-27T07:52:21.960Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Welcome test on Your Minecraft Server server"
+    },
+    {
+      "id": "1758959541960ojboy0duh",
+      "timestamp": "2025-09-27T07:52:21.960Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 This server uses AuthMeReloaded protection!"
+    },
+    {
+      "id": "1758959543701t27doed4a",
+      "timestamp": "2025-09-27T07:52:23.701Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "📦 Inventory updated: 4 items"
+    },
+    {
+      "id": "175895954446645e9muov8",
+      "timestamp": "2025-09-27T07:52:24.466Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Hi PvPManager! How's it going?"
+    },
+    {
+      "id": "1758959546701qhyhhtu1k",
+      "timestamp": "2025-09-27T07:52:26.701Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🤖 Anti-AFK behaviors activated"
+    },
+    {
+      "id": "1758959548180lfu0golk0",
+      "timestamp": "2025-09-27T07:52:28.180Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 hi"
     }
   ],
-  "inventory": []
+  "inventory": [
+    {
+      "id": 1758959543701.8367,
+      "name": "stone_sword",
+      "count": 1,
+      "slot": 36
+    },
+    {
+      "id": 1758959543701.1318,
+      "name": "stone_shovel",
+      "count": 1,
+      "slot": 37
+    },
+    {
+      "id": 1758959543701.151,
+      "name": "stone_pickaxe",
+      "count": 1,
+      "slot": 38
+    },
+    {
+      "id": 1758959543701.8955,
+      "name": "stone_axe",
+      "count": 1,
+      "slot": 39
+    }
+  ]
 }
