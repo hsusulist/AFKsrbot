@@ -1,21 +1,22 @@
 {
   "discordConfig": {
     "id": "discord_bot",
-    "token": "112",
+    "token": "",
     "isConnected": false,
-    "autoStart": false,
-    "logCommands": false,
-    "guildCount": 0,
+    "autoStart": true,
+    "logCommands": true,
+    "guildCount": 1,
     "commandsExecuted": 0,
-    "uptime": "0m"
+    "uptime": "0m",
+    "lastConnected": "2025-09-27T14:30:46.309Z"
   },
   "minecraftConfig": {
     "id": "minecraft_server",
     "serverIP": "teddysmpp.aternos.me",
     "serverPort": "39018",
     "username": "Afkbot",
-    "password": "bot123",
-    "shouldRegister": false,
+    "password": "",
+    "shouldRegister": true,
     "version": "1.20.4",
     "platform": "java",
     "autoReconnect": true,
@@ -31,7 +32,7 @@
     "id": "bot_status",
     "discordConnected": false,
     "minecraftConnected": true,
-    "lastActivity": "2025-09-27T10:53:34.974Z",
+    "lastActivity": "2025-09-27T14:30:46.309Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [
@@ -276,6 +277,55 @@
       "type": "minecraft",
       "level": "info",
       "message": "💬 Please, register to the server with the command: /register <password> <ConfirmPassword>"
+    },
+    {
+      "id": "1758983377650l9kqnk34b",
+      "timestamp": "2025-09-27T14:29:37.650Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: An invalid token was provided."
+    },
+    {
+      "id": "17589833792032xtra63rx",
+      "timestamp": "2025-09-27T14:29:39.203Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: An invalid token was provided."
+    },
+    {
+      "id": "1758983401307kgj85fshk",
+      "timestamp": "2025-09-27T14:30:01.307Z",
+      "type": "discord",
+      "level": "info",
+      "message": "🤖 Discord bot logged in as Afksrbot#5784"
+    },
+    {
+      "id": "17589834020562epuhz72l",
+      "timestamp": "2025-09-27T14:30:02.056Z",
+      "type": "discord",
+      "level": "info",
+      "message": "✅ Slash commands registered successfully"
+    },
+    {
+      "id": "1758983432284u91fy5w37",
+      "timestamp": "2025-09-27T14:30:32.284Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1758983445856yei4shdnk",
+      "timestamp": "2025-09-27T14:30:45.856Z",
+      "type": "discord",
+      "level": "info",
+      "message": "🤖 Discord bot logged in as Afksrbot#5784"
+    },
+    {
+      "id": "1758983446309gaowhpcip",
+      "timestamp": "2025-09-27T14:30:46.309Z",
+      "type": "discord",
+      "level": "info",
+      "message": "✅ Slash commands registered successfully"
     }
   ],
   "inventory": [

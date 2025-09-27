@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAutosave } from "@/hooks/useAutosave";
 import { 
   Bot, 
   Shield, 
@@ -23,12 +24,33 @@ import {
   ExternalLink
 } from "lucide-react";
 
+interface DiscordBotSettings {
+  botToken: string;
+  autoStart: boolean;
+  logCommands: boolean;
+}
+
+const defaultSettings: DiscordBotSettings = {
+  botToken: "",
+  autoStart: false,
+  logCommands: true
+};
+
 export default function DiscordBot() {
-  const [botToken, setBotToken] = useState("");
   const [showToken, setShowToken] = useState(false);
-  const [autoStart, setAutoStart] = useState(false);
-  const [logCommands, setLogCommands] = useState(true);
   const { toast } = useToast();
+  
+  // Auto-save Discord bot settings
+  const { data: settings, setData: setSettings, isLoading: isAutoSaving, lastSaved } = useAutosave<DiscordBotSettings>(
+    'discord-bot-settings',
+    defaultSettings,
+    {
+      debounceMs: 1000,
+      onSave: () => {
+        console.log('Discord bot settings auto-saved');
+      }
+    }
+  );
 
   // Get current Discord config
   const { data: config, isLoading } = useQuery({
@@ -49,24 +71,31 @@ export default function DiscordBot() {
 
   const isConnected = typedConfig?.isConnected || false;
 
-  // Update state when config loads
+  // Update settings when config loads
   useEffect(() => {
     if (typedConfig) {
-      setAutoStart(typedConfig.autoStart || false);
-      setLogCommands(typedConfig.logCommands !== undefined ? typedConfig.logCommands : true);
-      // Don't auto-fill token for security, but show that one exists
+      setSettings(prev => ({
+        ...prev,
+        autoStart: typedConfig.autoStart || false,
+        logCommands: typedConfig.logCommands !== undefined ? typedConfig.logCommands : true,
+        // Don't auto-fill token for security
+      }));
     }
-  }, [typedConfig]);
+  }, [typedConfig, setSettings]);
 
-  // Handle settings changes with persistence
+  // Handle settings changes with auto-save and immediate server sync
   const handleAutoStartChange = (checked: boolean) => {
-    setAutoStart(checked);
+    setSettings(prev => ({ ...prev, autoStart: checked }));
     updateSettingsMutation.mutate({ autoStart: checked });
   };
 
   const handleLogCommandsChange = (checked: boolean) => {
-    setLogCommands(checked);
+    setSettings(prev => ({ ...prev, logCommands: checked }));
     updateSettingsMutation.mutate({ logCommands: checked });
+  };
+  
+  const handleTokenChange = (value: string) => {
+    setSettings(prev => ({ ...prev, botToken: value }));
   };
 
   // Connect mutation
@@ -80,7 +109,7 @@ export default function DiscordBot() {
         title: "Connected!",
         description: "🤖 Discord bot connected! Check logs for details.",
       });
-      setBotToken(""); // Clear token from input for security
+      setSettings(prev => ({ ...prev, botToken: "" })); // Clear token from input for security
       queryClient.invalidateQueries({ queryKey: ['/api/discord/config'] });
     },
     onError: (error: any) => {
@@ -142,7 +171,7 @@ export default function DiscordBot() {
 
   const handleConnect = () => {
     // If we have a stored token and no new token entered, use the stored one
-    if (!botToken.trim() && !typedConfig?.hasToken) {
+    if (!settings.botToken.trim() && !typedConfig?.hasToken) {
       toast({
         title: "Error",
         description: "Please enter a Discord bot token",
@@ -152,13 +181,13 @@ export default function DiscordBot() {
     }
 
     const connectData: any = {
-      autoStart,
-      logCommands,
+      autoStart: settings.autoStart,
+      logCommands: settings.logCommands,
     };
     
     // Only include token if a new one was entered
-    if (botToken.trim()) {
-      connectData.token = botToken;
+    if (settings.botToken.trim()) {
+      connectData.token = settings.botToken;
     }
 
     connectMutation.mutate(connectData);
@@ -169,8 +198,8 @@ export default function DiscordBot() {
   };
 
   const copyToken = () => {
-    if (botToken) {
-      navigator.clipboard.writeText(botToken);
+    if (settings.botToken) {
+      navigator.clipboard.writeText(settings.botToken);
       toast({
         title: "Copied",
         description: "Bot token copied to clipboard",
@@ -211,9 +240,9 @@ export default function DiscordBot() {
                       id="token"
                       type={showToken ? "text" : "password"}
                       placeholder={typedConfig?.hasToken ? "Token configured (enter new to change)" : "Enter your Discord bot token"}
-                      value={botToken}
-                      onChange={(e) => setBotToken(e.target.value)}
-                      className="pr-20"
+                      value={settings.botToken}
+                      onChange={(e) => handleTokenChange(e.target.value)}
+                      className="pr-20 transition-all duration-150 ease-out"
                       disabled={isLoading}
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
@@ -238,9 +267,22 @@ export default function DiscordBot() {
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Get your token from Discord Developer Portal
-                </p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                  <span>Get your token from Discord Developer Portal</span>
+                  <div className="flex items-center gap-2">
+                    {isAutoSaving && (
+                      <div className="flex items-center gap-1 text-primary">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                        <span>Saving...</span>
+                      </div>
+                    )}
+                    {lastSaved && (
+                      <span className="text-success">
+                        Saved: {lastSaved.toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
@@ -250,7 +292,7 @@ export default function DiscordBot() {
                 </div>
                 <Switch
                   id="auto-start"
-                  checked={autoStart}
+                  checked={settings.autoStart}
                   onCheckedChange={handleAutoStartChange}
                   disabled={isLoading || updateSettingsMutation.isPending}
                 />
@@ -263,7 +305,7 @@ export default function DiscordBot() {
                 </div>
                 <Switch
                   id="log-commands"
-                  checked={logCommands}
+                  checked={settings.logCommands}
                   onCheckedChange={handleLogCommandsChange}
                   disabled={isLoading || updateSettingsMutation.isPending}
                 />
@@ -273,17 +315,18 @@ export default function DiscordBot() {
                 {!isConnected ? (
                   <Button 
                     onClick={handleConnect} 
-                    className="gradient-gaming glow-primary"
+                    className="gradient-gaming glow-primary transition-all duration-150 ease-out hover:scale-105"
                     disabled={connectMutation.isPending || isLoading}
                   >
                     <Bot className="w-4 h-4 mr-2" />
-                    {connectMutation.isPending ? "Connecting..." : typedConfig?.hasToken && !botToken.trim() ? "Reconnect Bot" : "Connect Bot"}
+                    {connectMutation.isPending ? "Connecting..." : typedConfig?.hasToken && !settings.botToken.trim() ? "Reconnect Bot" : "Connect Bot"}
                   </Button>
                 ) : (
                   <Button 
                     onClick={handleDisconnect} 
                     variant="destructive"
                     disabled={disconnectMutation.isPending || isLoading}
+                    className="transition-all duration-150 ease-out hover:scale-105"
                   >
                     <XCircle className="w-4 h-4 mr-2" />
                     {disconnectMutation.isPending ? "Disconnecting..." : "Disconnect Bot"}
