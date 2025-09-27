@@ -39,30 +39,30 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Bot Health"
-            value="100%"
-            description="Health & Food levels"
+            value="20/20"
+            description="Health & Hunger"
             icon={<Users className="w-6 h-6 text-primary" />}
             trend="up"
           />
           <StatCard
-            title="Messages Today"
-            value="89"
-            description="Bot commands executed"
+            title="Bot Commands"
+            value="0"
+            description="Commands executed today"
             icon={<MessageSquare className="w-6 h-6 text-accent" />}
-            trend="up"
+            trend="neutral"
           />
           <StatCard
-            title="Server Uptime"
-            value="99.8%"
-            description="Last 30 days"
-            icon={<Server className="w-6 h-6 text-success" />}
-            trend="up"
+            title="Bot Uptime"
+            value="Offline"
+            description="Not connected to server"
+            icon={<Server className="w-6 h-6 text-muted-foreground" />}
+            trend="neutral"
           />
           <StatCard
             title="Bot Status"
-            value="Online"
-            description="Connected and running"
-            icon={<Bot className="w-6 h-6 text-success" />}
+            value="Disconnected"
+            description="Ready to connect"
+            icon={<Bot className="w-6 h-6 text-muted-foreground" />}
           />
         </div>
 

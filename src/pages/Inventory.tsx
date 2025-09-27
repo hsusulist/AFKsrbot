@@ -17,12 +17,7 @@ import {
 } from "lucide-react";
 
 const inventoryItems = [
-  { id: 1, name: "Diamond Sword", type: "weapon", rarity: "legendary", quantity: 1, description: "A powerful diamond sword" },
-  { id: 2, name: "Iron Pickaxe", type: "tool", rarity: "common", quantity: 3, description: "Standard mining tool" },
-  { id: 3, name: "Diamond Helmet", type: "armor", rarity: "epic", quantity: 1, description: "Protection for your head" },
-  { id: 4, name: "Golden Apple", type: "consumable", rarity: "rare", quantity: 12, description: "Healing item" },
-  { id: 5, name: "Emerald", type: "material", rarity: "rare", quantity: 24, description: "Precious gemstone" },
-  { id: 6, name: "Enchanted Book", type: "misc", rarity: "epic", quantity: 7, description: "Contains magical spells" },
+  // Bot inventory is empty - bot needs to be connected to server to show items
 ];
 
 const getItemIcon = (type: string) => {
@@ -102,7 +97,14 @@ export default function Inventory() {
 
         {/* Inventory Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredItems.map((item) => (
+          {filteredItems.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No Items Found</h3>
+              <p className="text-muted-foreground">Bot inventory is empty. Connect to server to load items.</p>
+            </div>
+          ) : (
+            filteredItems.map((item) => (
             <Card key={item.id} className="glass-effect p-4 transition-smooth hover:scale-105">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -140,7 +142,8 @@ export default function Inventory() {
                 </Button>
               </div>
             </Card>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Summary Stats */}
@@ -149,7 +152,7 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <Package className="w-8 h-8 text-primary" />
               <div>
-                <p className="text-2xl font-bold text-foreground">{inventoryItems.length}</p>
+                <p className="text-2xl font-bold text-foreground">0</p>
                 <p className="text-sm text-muted-foreground">Total Items</p>
               </div>
             </div>
@@ -159,9 +162,7 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <Sword className="w-8 h-8 text-accent" />
               <div>
-                <p className="text-2xl font-bold text-foreground">
-                  {inventoryItems.filter(item => item.type === "weapon").length}
-                </p>
+                <p className="text-2xl font-bold text-foreground">0</p>
                 <p className="text-sm text-muted-foreground">Weapons</p>
               </div>
             </div>
@@ -171,9 +172,7 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <ShieldIcon className="w-8 h-8 text-success" />
               <div>
-                <p className="text-2xl font-bold text-foreground">
-                  {inventoryItems.filter(item => item.type === "armor").length}
-                </p>
+                <p className="text-2xl font-bold text-foreground">0</p>
                 <p className="text-sm text-muted-foreground">Armor</p>
               </div>
             </div>
@@ -183,9 +182,7 @@ export default function Inventory() {
             <div className="flex items-center gap-3">
               <Diamond className="w-8 h-8 text-warning" />
               <div>
-                <p className="text-2xl font-bold text-foreground">
-                  {inventoryItems.filter(item => item.rarity === "legendary").length}
-                </p>
+                <p className="text-2xl font-bold text-foreground">0</p>
                 <p className="text-sm text-muted-foreground">Legendary</p>
               </div>
             </div>
