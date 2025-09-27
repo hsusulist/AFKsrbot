@@ -514,7 +514,20 @@ export function createRoutes(storage: IStorage) {
         return res.json({ isConnected: false });
       }
       
-      // Return only non-sensitive data
+      // Check if bot is actually connected (not just stored config)
+      const actuallyConnected = !!(minecraftBot && minecraftBot.entity);
+      
+      // Update stored config if it doesn't match reality
+      if (actuallyConnected !== config.isConnected) {
+        await storage.updateMinecraftConfig({ 
+          isConnected: actuallyConnected,
+          ping: actuallyConnected ? config.ping : 'N/A',
+          uptime: actuallyConnected ? config.uptime : 'N/A', 
+          playersOnline: actuallyConnected ? config.playersOnline : '0/0'
+        });
+      }
+      
+      // Return only non-sensitive data with actual connection state
       const safeConfig = {
         serverIP: config.serverIP,
         serverPort: config.serverPort,
@@ -526,10 +539,10 @@ export function createRoutes(storage: IStorage) {
         autoReconnect: config.autoReconnect,
         mode24_7: config.mode24_7,
         useWhitelist: config.useWhitelist,
-        isConnected: config.isConnected,
-        ping: config.ping,
-        uptime: config.uptime,
-        playersOnline: config.playersOnline,
+        isConnected: actuallyConnected, // Use actual state, not stored state
+        ping: actuallyConnected ? config.ping : 'N/A',
+        uptime: actuallyConnected ? config.uptime : 'N/A',
+        playersOnline: actuallyConnected ? config.playersOnline : '0/0',
         lastConnected: config.lastConnected,
       };
       

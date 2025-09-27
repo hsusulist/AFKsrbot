@@ -15,17 +15,17 @@
     "serverIP": "teddysmpp.aternos.me",
     "serverPort": "39018",
     "username": "Afkbot",
-    "password": "",
+    "password": "bot1234",
     "shouldRegister": true,
     "version": "1.20.4",
     "platform": "java",
     "autoReconnect": true,
     "mode24_7": true,
     "useWhitelist": false,
-    "isConnected": true,
-    "ping": "0ms",
-    "uptime": "0m",
-    "playersOnline": "3/100",
+    "isConnected": false,
+    "ping": "N/A",
+    "uptime": "N/A",
+    "playersOnline": "0/0",
     "lastConnected": "2025-09-27T10:53:34.974Z"
   },
   "botStatus": {
@@ -104,181 +104,6 @@
       "message": "Failed to connect Discord bot: An invalid token was provided."
     },
     {
-      "id": "1758970413790v3mbnfcr0",
-      "timestamp": "2025-09-27T10:53:33.790Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🔄 Auto-reconnecting in 0 seconds..."
-    },
-    {
-      "id": "1758970413791miqpausyf",
-      "timestamp": "2025-09-27T10:53:33.791Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "Attempting to reconnect..."
-    },
-    {
-      "id": "1758970414958po32bjbi8",
-      "timestamp": "2025-09-27T10:53:34.958Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 Afkbot joined the game"
-    },
-    {
-      "id": "17589704149590wr1vxedh",
-      "timestamp": "2025-09-27T10:53:34.959Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🟢 Afkbot joined the server"
-    },
-    {
-      "id": "1758970414959ry0c063om",
-      "timestamp": "2025-09-27T10:53:34.959Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🟢 hsusulist joined the server"
-    },
-    {
-      "id": "1758970414959f2xfjqyb0",
-      "timestamp": "2025-09-27T10:53:34.959Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🟢 kavin992647w joined the server"
-    },
-    {
-      "id": "1758970414962zivr8p7o4",
-      "timestamp": "2025-09-27T10:53:34.962Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 [PvPManager] Welcome! You are protected against PvP for 5 minutes"
-    },
-    {
-      "id": "1758970414962wg9zsjxn8",
-      "timestamp": "2025-09-27T10:53:34.962Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "<PvPManager> Welcome! You are protected against PvP for 5 minutes"
-    },
-    {
-      "id": "17589704149637x7fir4d6",
-      "timestamp": "2025-09-27T10:53:34.963Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🟢 §9§2§0§2§d§m§d§l joined the server"
-    },
-    {
-      "id": "1758970414963bg9zr0cee",
-      "timestamp": "2025-09-27T10:53:34.963Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🟢 §k§k§a§6§3§5§l§b joined the server"
-    },
-    {
-      "id": "1758970414973icd8vs64s",
-      "timestamp": "2025-09-27T10:53:34.973Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🎮 Bot Afkbot joined the server!"
-    },
-    {
-      "id": "1758970414974rb1cnfzsi",
-      "timestamp": "2025-09-27T10:53:34.974Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "Attempting to login with password"
-    },
-    {
-      "id": "1758970414976fczjybavd",
-      "timestamp": "2025-09-27T10:53:34.976Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 Welcome [Member]Afkbot to the server!"
-    },
-    {
-      "id": "1758970414978wv3xn1hx6",
-      "timestamp": "2025-09-27T10:53:34.978Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 Afkbot has made the advancement [Getting an Upgrade]"
-    },
-    {
-      "id": "17589704151193j70rb8gd",
-      "timestamp": "2025-09-27T10:53:35.119Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 This user isn't registered!"
-    },
-    {
-      "id": "175897041684530ounl8ws",
-      "timestamp": "2025-09-27T10:53:36.845Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🔴 §9§2§0§2§d§m§d§l left the server"
-    },
-    {
-      "id": "17589704168465gqblmsve",
-      "timestamp": "2025-09-27T10:53:36.846Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🔴 §k§k§a§6§3§5§l§b left the server"
-    },
-    {
-      "id": "17589704169759a1u37bw8",
-      "timestamp": "2025-09-27T10:53:36.975Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "📦 Inventory updated: 4 items"
-    },
-    {
-      "id": "1758970417107u2o7e79c9",
-      "timestamp": "2025-09-27T10:53:37.107Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 Please, register to the server with the command: /register <password> <ConfirmPassword>"
-    },
-    {
-      "id": "1758970419602367t8h02l",
-      "timestamp": "2025-09-27T10:53:39.602Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 In order to chat you must be authenticated!"
-    },
-    {
-      "id": "17589704199745yg8d8q2m",
-      "timestamp": "2025-09-27T10:53:39.974Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🤖 Anti-AFK behaviors activated"
-    },
-    {
-      "id": "1758970422108tlxyvrh0s",
-      "timestamp": "2025-09-27T10:53:42.108Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 Please, register to the server with the command: /register <password> <ConfirmPassword>"
-    },
-    {
-      "id": "1758970427107j9qx5r4pk",
-      "timestamp": "2025-09-27T10:53:47.107Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 Please, register to the server with the command: /register <password> <ConfirmPassword>"
-    },
-    {
-      "id": "175897042964905fytsr6m",
-      "timestamp": "2025-09-27T10:53:49.649Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 ｈｉ"
-    },
-    {
-      "id": "1758970432107exa34u9ii",
-      "timestamp": "2025-09-27T10:53:52.107Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💬 Please, register to the server with the command: /register <password> <ConfirmPassword>"
-    },
-    {
       "id": "1758983377650l9kqnk34b",
       "timestamp": "2025-09-27T14:29:37.650Z",
       "type": "discord",
@@ -307,13 +132,6 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "1758983432284u91fy5w37",
-      "timestamp": "2025-09-27T14:30:32.284Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "💾 Server configuration saved"
-    },
-    {
       "id": "1758983445856yei4shdnk",
       "timestamp": "2025-09-27T14:30:45.856Z",
       "type": "discord",
@@ -326,6 +144,20 @@
       "type": "discord",
       "level": "info",
       "message": "✅ Slash commands registered successfully"
+    },
+    {
+      "id": "1759013611110ktav9s52l",
+      "timestamp": "2025-09-27T22:53:31.110Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔄 Auto-reconnecting in 10 seconds..."
+    },
+    {
+      "id": "1759013621114yv8wkrbwf",
+      "timestamp": "2025-09-27T22:53:41.114Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Attempting to reconnect..."
     }
   ],
   "inventory": [
