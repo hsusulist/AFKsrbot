@@ -26,7 +26,8 @@ export const queryClient = new QueryClient({
 
 // Default fetcher function
 const defaultFetcher = async (url: string, options?: RequestInit) => {
-  const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:3001' : '';
+  // Use the proxy in development, direct calls in production
+  const baseUrl = import.meta.env.MODE === 'development' ? '' : '';
   const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
   
   const response = await fetch(fullUrl, {

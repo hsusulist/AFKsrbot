@@ -14,10 +14,10 @@ async function startServer() {
   try {
     await storage.init();
     
-    // Middleware
+    // Middleware - Allow all origins in development for Replit compatibility
     const corsOptions = process.env.NODE_ENV === 'production' 
       ? { origin: [process.env.REPLIT_DOMAIN || 'http://localhost:5000'] }
-      : { origin: ['http://localhost:5000', 'http://0.0.0.0:5000', 'http://127.0.0.1:5000'] };
+      : { origin: true }; // Allow all origins in development
     app.use(cors(corsOptions));
     app.use(express.json());
 
