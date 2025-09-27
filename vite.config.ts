@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => ({
       port: 5000,
     },
     allowedHosts: true,
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
