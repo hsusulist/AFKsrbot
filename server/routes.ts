@@ -663,21 +663,25 @@ export function createRoutes(storage: IStorage) {
       let isApproachingPlayer = false;
       
       // Helper functions for player interactions
-      const getRandomPlayer = () => {
-        if (!minecraftBot || !minecraftBot.players) return null;
-        const players = Object.keys(minecraftBot.players).filter(name => {
-          const player = minecraftBot.players[name];
-          return name !== minecraftBot.username && player && player.entity;
-        });
-        if (players.length === 0) return null;
-        return players[Math.floor(Math.random() * players.length)];
-      };
-      
       const getDistanceToPlayer = (playerName: string) => {
         if (!minecraftBot || !minecraftBot.entity || !minecraftBot.players[playerName]) return null;
         const player = minecraftBot.players[playerName];
         if (!player.entity) return null;
         return minecraftBot.entity.position.distanceTo(player.entity.position);
+      };
+      
+      const getRandomPlayer = () => {
+        if (!minecraftBot || !minecraftBot.players) return null;
+        const players = Object.keys(minecraftBot.players).filter(name => {
+          const player = minecraftBot.players[name];
+          if (name === minecraftBot.username || !player || !player.entity) return false;
+          
+          // Check if player is within 40 blocks range
+          const distance = getDistanceToPlayer(name);
+          return distance !== null && distance <= 40;
+        });
+        if (players.length === 0) return null;
+        return players[Math.floor(Math.random() * players.length)];
       };
       
       const moveTowardsPlayer = async (playerName: string, targetDistance: number) => {
@@ -757,11 +761,11 @@ export function createRoutes(storage: IStorage) {
                     return;
                   }
                   
-                  const reachedTarget = await moveTowardsPlayer(currentTarget, 40);
+                  const reachedTarget = await moveTowardsPlayer(currentTarget, 3);
                   if (reachedTarget) {
                     minecraftBot.clearControlStates();
                     minecraftBot.chat('hi');
-                    await addLog('minecraft', 'info', `👋 Said hi to ${currentTarget} from 40 blocks`);
+                    await addLog('minecraft', 'info', `👋 Said hi to ${currentTarget} up close`);
                     cleanupApproach();
                   }
                 }, 1000);

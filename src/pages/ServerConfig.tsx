@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
@@ -18,7 +18,8 @@ import {
   Eye,
   EyeOff,
   Save,
-  XCircle
+  XCircle,
+  Loader2
 } from "lucide-react";
 
 export default function ServerConfig() {
@@ -62,7 +63,10 @@ export default function ServerConfig() {
       setServerIP(typedConfig.serverIP || "127.0.0.1");
       setServerPort(typedConfig.serverPort || "25565");
       setUsername(typedConfig.username || "");
-      setBotPassword(typedConfig.password || "");
+      // Don't override password if it's empty in config (API doesn't return passwords for security)
+      if (typedConfig.password) {
+        setBotPassword(typedConfig.password);
+      }
       setShouldRegister(typedConfig.shouldRegister || false);
       setUseWhitelist(typedConfig.useWhitelist || false);
       setAutoReconnect(typedConfig.autoReconnect !== undefined ? typedConfig.autoReconnect : true);
@@ -199,6 +203,51 @@ export default function ServerConfig() {
       useWhitelist,
     });
   };
+
+  // Auto-save functionality with debouncing
+  const debouncedAutoSave = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout;
+      return () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          if (serverIP && serverPort && username) {
+            console.log('Auto-saving settings...');
+            saveSettingsMutation.mutate({
+              serverIP,
+              serverPort,
+              username,
+              password: botPassword || undefined,
+              shouldRegister,
+              version,
+              platform,
+              autoReconnect,
+              useWhitelist,
+            });
+          }
+        }, 2000); // Auto-save after 2 seconds of no changes
+      };
+    })(),
+    [serverIP, serverPort, username, botPassword, shouldRegister, version, platform, autoReconnect, useWhitelist, saveSettingsMutation]
+  );
+
+  // Cleanup auto-save timeout on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup any pending timeouts on unmount
+      const cleanup = debouncedAutoSave as any;
+      if (cleanup.timeoutId) {
+        clearTimeout(cleanup.timeoutId);
+      }
+    };
+  }, []);
+
+  // Auto-save when form values change
+  useEffect(() => {
+    if (typedConfig) { // Only auto-save if config has loaded (not on initial render)
+      debouncedAutoSave();
+    }
+  }, [serverIP, serverPort, username, botPassword, shouldRegister, version, platform, autoReconnect, useWhitelist, debouncedAutoSave, typedConfig]);
 
   return (
     <Layout>
@@ -408,7 +457,11 @@ export default function ServerConfig() {
                     className="flex-1 gradient-gaming glow-primary"
                     disabled={connectMutation.isPending}
                   >
-                    <Server className="w-4 h-4 mr-2" />
+                    {connectMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Server className="w-4 h-4 mr-2" />
+                    )}
                     {connectMutation.isPending ? "Connecting..." : "Connect to Server"}
                   </Button>
                 ) : (
