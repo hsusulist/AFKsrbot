@@ -16,7 +16,9 @@ import {
   CheckCircle,
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Save,
+  XCircle
 } from "lucide-react";
 
 export default function ServerConfig() {
@@ -160,6 +162,42 @@ export default function ServerConfig() {
 
   const handleDisconnect = () => {
     disconnectMutation.mutate();
+  };
+
+  // Save settings mutation
+  const saveSettingsMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('/api/minecraft/config', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      toast({
+        title: "✅ Settings Saved!",
+        description: "Your server configuration has been saved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/minecraft/config'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Save Failed",
+        description: error.message || "Failed to save settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSave = () => {
+    saveSettingsMutation.mutate({
+      serverIP,
+      serverPort,
+      username,
+      password: botPassword || undefined,
+      shouldRegister,
+      version,
+      platform,
+      autoReconnect,
+      useWhitelist,
+    });
   };
 
   return (
@@ -355,21 +393,33 @@ export default function ServerConfig() {
               </div>
 
               <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={handleSave}
+                  variant="outline"
+                  disabled={saveSettingsMutation.isPending}
+                  className="flex-1"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {saveSettingsMutation.isPending ? "Saving..." : "Save Settings"}
+                </Button>
                 {!isConnected ? (
                   <Button 
                     onClick={handleConnect}
                     className="flex-1 gradient-gaming glow-primary"
+                    disabled={connectMutation.isPending}
                   >
                     <Server className="w-4 h-4 mr-2" />
-                    Connect to Server
+                    {connectMutation.isPending ? "Connecting..." : "Connect to Server"}
                   </Button>
                 ) : (
                   <Button 
                     onClick={handleDisconnect}
                     variant="outline"
                     className="flex-1"
+                    disabled={disconnectMutation.isPending}
                   >
-                    Disconnect
+                    <XCircle className="w-4 h-4 mr-2" />
+                    {disconnectMutation.isPending ? "Disconnecting..." : "Disconnect"}
                   </Button>
                 )}
               </div>

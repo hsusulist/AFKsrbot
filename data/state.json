@@ -24,17 +24,34 @@
     "isConnected": false,
     "ping": "0ms",
     "uptime": "0m",
-    "playersOnline": "2/100",
-    "lastConnected": "2025-09-27T07:52:21.701Z"
+    "playersOnline": "1/100",
+    "lastConnected": "2025-09-27T10:42:30.760Z"
   },
   "botStatus": {
     "id": "bot_status",
     "discordConnected": false,
-    "minecraftConnected": false,
-    "lastActivity": "2025-09-27T10:39:23.347Z",
+    "minecraftConnected": true,
+    "lastActivity": "2025-09-27T10:42:30.760Z",
     "totalUptime": "0m"
   },
-  "consoleCommands": [],
+  "consoleCommands": [
+    {
+      "id": "1758969763764",
+      "timestamp": "2025-09-27T10:42:43.764Z",
+      "command": "hi",
+      "response": "Command executed: /hi",
+      "success": true,
+      "requiresOp": true
+    },
+    {
+      "id": "1758969913481",
+      "timestamp": "2025-09-27T10:45:13.481Z",
+      "command": "hi",
+      "response": "Command executed: /hi",
+      "success": true,
+      "requiresOp": true
+    }
+  ],
   "logs": [
     {
       "id": "1758966737606kol4o18sy",
@@ -84,32 +101,28 @@
       "type": "discord",
       "level": "error",
       "message": "Failed to connect Discord bot: An invalid token was provided."
+    },
+    {
+      "id": "1758969810655txqnkw7i2",
+      "timestamp": "2025-09-27T10:43:30.655Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔄 Auto-reconnecting in 10 seconds..."
+    },
+    {
+      "id": "17589698206656f88dsnnd",
+      "timestamp": "2025-09-27T10:43:40.665Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Attempting to reconnect..."
+    },
+    {
+      "id": "1758969913481lacagvxkz",
+      "timestamp": "2025-09-27T10:45:13.481Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Console command executed: /hi"
     }
   ],
-  "inventory": [
-    {
-      "id": 1758959543701.8367,
-      "name": "stone_sword",
-      "count": 1,
-      "slot": 36
-    },
-    {
-      "id": 1758959543701.1318,
-      "name": "stone_shovel",
-      "count": 1,
-      "slot": 37
-    },
-    {
-      "id": 1758959543701.151,
-      "name": "stone_pickaxe",
-      "count": 1,
-      "slot": 38
-    },
-    {
-      "id": 1758959543701.8955,
-      "name": "stone_axe",
-      "count": 1,
-      "slot": 39
-    }
-  ]
+  "inventory": []
 }

@@ -539,6 +539,50 @@ export function createRoutes(storage: IStorage) {
     }
   });
 
+  // PATCH endpoint to save minecraft settings without connecting
+  router.patch('/api/minecraft/config', async (req, res) => {
+    try {
+      const updates = insertMinecraftServerConfigSchema.partial().parse(req.body);
+      
+      // Get existing config
+      const existingConfig = await storage.getMinecraftConfig();
+      if (!existingConfig) {
+        // Create new config if none exists
+        await storage.saveMinecraftConfig({
+          serverIP: updates.serverIP || '127.0.0.1',
+          serverPort: updates.serverPort || '25565',
+          username: updates.username || '',
+          password: updates.password,
+          shouldRegister: updates.shouldRegister || false,
+          version: updates.version || '1.20.4',
+          platform: updates.platform || 'java',
+          autoReconnect: updates.autoReconnect !== undefined ? updates.autoReconnect : true,
+          mode24_7: updates.mode24_7 !== undefined ? updates.mode24_7 : true,
+          useWhitelist: updates.useWhitelist || false,
+          isConnected: false, // Don't change connection status when just saving settings
+        });
+      } else {
+        // Update existing config, preserving password if not provided
+        const updatedConfig = {
+          ...existingConfig,
+          ...updates,
+          // Preserve existing password if not provided in update
+          password: updates.password !== undefined ? updates.password : existingConfig.password,
+          // Don't change connection status when just saving settings
+          isConnected: existingConfig.isConnected,
+        };
+        await storage.saveMinecraftConfig(updatedConfig);
+      }
+      
+      await addLog('minecraft', 'info', '💾 Server configuration saved');
+      res.json({ success: true, message: 'Settings saved successfully' });
+      
+    } catch (error) {
+      await addLog('minecraft', 'error', `Failed to save settings: ${error.message}`);
+      res.status(500).json({ error: 'Failed to save settings', details: error.message });
+    }
+  });
+
   router.post('/api/minecraft/connect', async (req, res) => {
     try {
       const config = insertMinecraftServerConfigSchema.parse(req.body);
