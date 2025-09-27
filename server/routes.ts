@@ -58,15 +58,33 @@ export function createRoutes(storage: IStorage) {
 
   router.post('/api/discord/connect', async (req, res) => {
     try {
+      console.log('🔧 Connect request body:', req.body);
       const { token, autoStart, logCommands } = req.body;
       
       // Get existing config to check for stored token
       const existingConfig = await storage.getDiscordConfig();
+      console.log('📦 Existing config hasToken:', !!existingConfig?.token);
       const finalToken = token || existingConfig?.token;
       
       if (!finalToken) {
+        console.log('❌ No token available - new:', !!token, 'stored:', !!existingConfig?.token);
         return res.status(400).json({ error: 'Discord bot token is required' });
       }
+      
+      console.log('✅ Using token for connection, length:', finalToken.length);
+
+      // Save token to storage FIRST (before attempting connection)
+      await storage.saveDiscordConfig({
+        token: finalToken,
+        isConnected: false, // Will be updated to true if connection succeeds
+        autoStart: autoStart !== undefined ? autoStart : existingConfig?.autoStart || false,
+        logCommands: logCommands !== undefined ? logCommands : existingConfig?.logCommands || true,
+        guildCount: existingConfig?.guildCount || 0,
+        commandsExecuted: existingConfig?.commandsExecuted || 0,
+        uptime: '0m',
+        lastConnected: existingConfig?.lastConnected,
+      });
+      console.log('💾 Token saved to storage');
 
       // Disconnect existing bot if any
       if (discordBot) {
@@ -74,13 +92,12 @@ export function createRoutes(storage: IStorage) {
         discordBot = null;
       }
 
-      // Create new Discord client
+      // Create new Discord client with basic intents
       discordBot = new Client({
         intents: [
           GatewayIntentBits.Guilds,
           GatewayIntentBits.GuildMessages,
           GatewayIntentBits.MessageContent,
-          GatewayIntentBits.GuildMembers,
         ]
       });
 
@@ -148,15 +165,10 @@ export function createRoutes(storage: IStorage) {
           await addLog('discord', 'error', `Failed to register slash commands: ${error.message}`);
         }
         
-        // Update config with connection status
-        const config = await storage.saveDiscordConfig({
-          token: finalToken,
+        // Update config with successful connection status
+        const config = await storage.updateDiscordConfig({
           isConnected: true,
-          autoStart: autoStart !== undefined ? autoStart : existingConfig?.autoStart || false,
-          logCommands: logCommands !== undefined ? logCommands : existingConfig?.logCommands || true,
           guildCount: discordBot.guilds.cache.size,
-          commandsExecuted: existingConfig?.commandsExecuted || 0,
-          uptime: '0m',
           lastConnected: new Date().toISOString(),
         });
 

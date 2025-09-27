@@ -71,8 +71,10 @@ export const InventoryItemSchema = z.object({
   metadata: z.string().optional(),
 });
 
-// Insert schemas using zod
-export const insertDiscordBotConfigSchema = DiscordBotConfigSchema.omit({ id: true });
+// Insert schemas using zod - make token optional for reconnection
+export const insertDiscordBotConfigSchema = DiscordBotConfigSchema.omit({ id: true }).extend({
+  token: z.string().optional(), // Allow optional token for reconnection
+});
 export const insertMinecraftServerConfigSchema = MinecraftServerConfigSchema.omit({ id: true });
 export const insertBotStatusSchema = BotStatusSchema.omit({ id: true });
 export const insertConsoleCommandSchema = ConsoleCommandSchema.omit({ id: true, timestamp: true });

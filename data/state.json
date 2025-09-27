@@ -1,5 +1,14 @@
 {
-  "discordConfig": null,
+  "discordConfig": {
+    "id": "discord_bot",
+    "token": "test_fake_token_will_fail",
+    "isConnected": false,
+    "autoStart": false,
+    "logCommands": false,
+    "guildCount": 0,
+    "commandsExecuted": 0,
+    "uptime": "0m"
+  },
   "minecraftConfig": {
     "id": "minecraft_server",
     "serverIP": "teddysmpp.aternos.me",
@@ -152,6 +161,48 @@
       "type": "minecraft",
       "level": "info",
       "message": "💬 hi"
+    },
+    {
+      "id": "1758966737606kol4o18sy",
+      "timestamp": "2025-09-27T09:52:17.606Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: Used disallowed intents"
+    },
+    {
+      "id": "17589667430031qv7nz1im",
+      "timestamp": "2025-09-27T09:52:23.003Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: Used disallowed intents"
+    },
+    {
+      "id": "17589669974591o7jvi1a7",
+      "timestamp": "2025-09-27T09:56:37.459Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: An invalid token was provided."
+    },
+    {
+      "id": "1758967148851wb3ff8rsp",
+      "timestamp": "2025-09-27T09:59:08.851Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: An invalid token was provided."
+    },
+    {
+      "id": "175896720280233k0v0r9r",
+      "timestamp": "2025-09-27T10:00:02.802Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: An invalid token was provided."
+    },
+    {
+      "id": "17589672193791uyler10d",
+      "timestamp": "2025-09-27T10:00:19.379Z",
+      "type": "discord",
+      "level": "error",
+      "message": "Failed to connect Discord bot: An invalid token was provided."
     }
   ],
   "inventory": [
