@@ -989,7 +989,7 @@ export function createRoutes(storage: IStorage) {
             break;
         }
         
-        await addLog('minecraft', errorType, errorMessage);
+        await addLog('minecraft', errorType === 'warn' ? 'warn' : 'error', errorMessage);
         
         // Update connection status when error occurs
         await storage.updateMinecraftConfig({ 
@@ -1187,22 +1187,23 @@ export function createRoutes(storage: IStorage) {
   // Inventory
   router.get('/api/inventory', async (req, res) => {
     try {
-      let inventory = await storage.getInventory();
-      
-      // If Minecraft bot is connected, get real inventory
-      if (minecraftBot && minecraftBot.inventory) {
-        const items = minecraftBot.inventory.items();
-        inventory = items.map((item, index) => ({
-          id: `${item.type}_${index}`,
-          name: item.name || item.displayName || 'Unknown',
-          count: item.count,
-          slot: item.slot,
-          metadata: item.metadata ? JSON.stringify(item.metadata) : undefined,
-        }));
-        
-        // Save to storage
-        await storage.updateInventory(inventory);
+      // Only return inventory if bot is actually connected
+      if (!minecraftBot || !minecraftBot.inventory) {
+        return res.json([]); // Return empty array when not connected
       }
+      
+      // Get real inventory from connected bot
+      const items = minecraftBot.inventory.items();
+      const inventory = items.map((item, index) => ({
+        id: `${item.type}_${index}`,
+        name: item.name || item.displayName || 'Unknown',
+        count: item.count,
+        slot: item.slot,
+        metadata: item.metadata ? JSON.stringify(item.metadata) : undefined,
+      }));
+      
+      // Save to storage for caching
+      await storage.updateInventory(inventory);
       
       res.json(inventory);
     } catch (error) {

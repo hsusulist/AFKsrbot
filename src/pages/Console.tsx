@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAutosave } from "@/hooks/useAutosave";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   Terminal, 
   Send, 
@@ -17,24 +19,41 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Copy
+  Copy,
+  MessageCircle,
+  UserPlus,
+  UserMinus,
+  Gamepad2
 } from "lucide-react";
 
 interface ConsoleEntry {
   id: number;
   timestamp: string;
-  type: "command" | "response" | "error" | "info";
+  type: "command" | "response" | "error" | "info" | "chat" | "join" | "leave";
   content: string;
   user?: string;
 }
 
-const initialConsoleEntries: ConsoleEntry[] = [];
-
 export default function Console() {
-  const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>(initialConsoleEntries);
-  const [isConnected, setIsConnected] = useState(true);
+  const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const { toast } = useToast();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Get real logs from backend including chat messages
+  const { data: logs = [], isLoading, refetch } = useQuery({
+    queryKey: ['/api/logs', 'minecraft'],
+    queryFn: () => apiRequest('/api/logs?type=minecraft&limit=100'),
+    refetchInterval: 2000, // Auto-refresh every 2 seconds
+  });
+
+  // Get bot connection status
+  const { data: config } = useQuery({
+    queryKey: ['/api/minecraft/config'],
+    queryFn: () => apiRequest('/api/minecraft/config'),
+  });
+
+  const isConnected = config?.isConnected || false;
   
   // Auto-save command input
   const { data: command, setData: setCommand } = useAutosave<string>(
@@ -42,6 +61,53 @@ export default function Console() {
     '',
     { debounceMs: 500 }
   );
+
+  // Convert backend logs to console entries for display
+  const allConsoleEntries: ConsoleEntry[] = [...logs.map((log: any, index: number) => {
+    let type = 'info';
+    let content = log.message || '';
+    
+    // Determine entry type based on log content
+    if (content.includes('executed:') || content.includes('/')) {
+      type = 'command';
+    } else if (content.includes('<') && content.includes('>')) {
+      type = 'chat';
+      // Extract chat message format: "<username> message"
+      const chatMatch = content.match(/<([^>]+)>\s*(.*)/);
+      if (chatMatch) {
+        content = `[${chatMatch[1]}] ${chatMatch[2]}`;
+      }
+    } else if (content.includes('joined') || content.includes('🟢')) {
+      type = 'join';
+    } else if (content.includes('left') || content.includes('🔴')) {
+      type = 'leave';
+    } else if (log.level === 'error') {
+      type = 'error';
+    }
+    
+    return {
+      id: index + 1000, // Use offset to avoid conflicts
+      timestamp: new Date(log.createdAt).toLocaleTimeString("en-US", { 
+        hour12: false, 
+        hour: "2-digit", 
+        minute: "2-digit", 
+        second: "2-digit" 
+      }),
+      type: type as "command" | "response" | "error" | "info" | "chat" | "join" | "leave",
+      content: content,
+      user: type === 'chat' ? 'Game' : undefined
+    };
+  }), ...consoleEntries].sort((a, b) => a.id - b.id);
+
+  // Auto-scroll to bottom when new entries arrive
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [allConsoleEntries]);
 
   const executeCommand = async () => {
     if (!command.trim()) return;
@@ -88,10 +154,15 @@ export default function Console() {
       setConsoleEntries(prev => [...prev, responseEntry]);
       
       toast({
-        title: result.success ? "Command Sent" : "Command Failed", 
-        description: result.success ? "🎮 Command executed in game!" : "❌ Bot is not connected to server",
+        title: result.success ? (command.startsWith('/') ? "Command Sent" : "Message Sent") : "Failed", 
+        description: result.success ? (command.startsWith('/') ? "🎮 Command executed in game!" : "💬 Chat message sent!") : "❌ Bot is not connected to server",
         variant: result.success ? "default" : "destructive"
       });
+      
+      // Clear command input after successful send
+      if (result.success) {
+        setCommand('');
+      }
 
     } catch (error) {
       const errorEntry: ConsoleEntry = {
@@ -139,8 +210,11 @@ export default function Console() {
     switch (type) {
       case "command": return <Terminal className="w-4 h-4 text-primary" />;
       case "response": return <CheckCircle className="w-4 h-4 text-success" />;
-      case "error": return <XCircle className="w-4 h-4 text-error" />;  
-      case "info": return <AlertTriangle className="w-4 h-4 text-accent" />;
+      case "error": return <XCircle className="w-4 h-4 text-error" />;
+      case "chat": return <MessageCircle className="w-4 h-4 text-blue-400" />;
+      case "join": return <UserPlus className="w-4 h-4 text-green-400" />;
+      case "leave": return <UserMinus className="w-4 h-4 text-orange-400" />;
+      case "info": return <Gamepad2 className="w-4 h-4 text-accent" />;
       default: return <Terminal className="w-4 h-4 text-muted-foreground" />;
     }
   };
@@ -150,6 +224,9 @@ export default function Console() {
       case "command": return "text-primary";
       case "response": return "text-success";
       case "error": return "text-error";
+      case "chat": return "text-blue-400";
+      case "join": return "text-green-400";
+      case "leave": return "text-orange-400";
       case "info": return "text-accent";
       default: return "text-foreground";
     }
@@ -182,16 +259,16 @@ export default function Console() {
         {/* Console Interface */}
         <Card className="glass-effect h-[500px] flex flex-col">
           {/* Console Output */}
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-2 font-mono text-sm">
-              {consoleEntries.length === 0 ? (
+              {allConsoleEntries.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Terminal className="w-12 h-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium text-foreground mb-2">No Console Activity</h3>
-                  <p className="text-muted-foreground">Execute commands to see output here</p>
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Chat Activity</h3>
+                  <p className="text-muted-foreground">Chat messages and server events will appear here</p>
                 </div>
               ) : (
-                consoleEntries.map((entry) => (
+                allConsoleEntries.map((entry) => (
                   <div 
                     key={entry.id} 
                     className="flex items-start gap-2 hover:bg-muted/30 p-2 rounded group transition-all duration-150 ease-out"
@@ -230,7 +307,7 @@ export default function Console() {
               <div className="relative flex-1">
                 <Terminal className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Enter command or message (commands start with /)..."
+                  placeholder="Type '/command' for server commands or just 'message' to chat..."
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && !isExecuting && executeCommand()}
