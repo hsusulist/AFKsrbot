@@ -492,6 +492,20 @@ export function createRoutes(storage: IStorage) {
         return res.status(400).json({ error: 'Password must be at least 4 characters' });
       }
 
+      // Smart hostname parsing - handle cases like "hostname:port" in serverIP field
+      let serverHost = config.serverIP;
+      let serverPort = config.serverPort;
+      
+      // If serverIP contains a colon, it might be hostname:port format
+      if (serverHost.includes(':')) {
+        const parts = serverHost.split(':');
+        if (parts.length === 2 && !isNaN(parseInt(parts[1]))) {
+          serverHost = parts[0];
+          serverPort = parts[1];
+          await addLog('minecraft', 'info', `Parsed server address: ${serverHost}:${serverPort}`);
+        }
+      }
+
       // Disconnect existing bot if any
       if (minecraftBot) {
         minecraftBot.quit();
@@ -500,8 +514,8 @@ export function createRoutes(storage: IStorage) {
 
       // Create Minecraft bot
       const botOptions: any = {
-        host: config.serverIP,
-        port: parseInt(config.serverPort),
+        host: serverHost,
+        port: parseInt(serverPort),
         username: config.username,
         version: config.version,
       };

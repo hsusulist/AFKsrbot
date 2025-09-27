@@ -128,7 +128,26 @@ export class FileStorage implements IStorage {
 
   async updateMinecraftConfig(updates: Partial<MinecraftServerConfig>): Promise<MinecraftServerConfig> {
     if (!this.data.minecraftConfig) {
-      throw new Error('Minecraft config not found');
+      // If no config exists yet, create a default one and apply updates
+      this.data.minecraftConfig = {
+        id: 'minecraft_server',
+        serverIP: '',
+        serverPort: '25565',
+        username: '',
+        version: '1.20.4',
+        platform: 'java',
+        autoReconnect: true,
+        mode24_7: true,
+        useWhitelist: false,
+        isConnected: false,
+        ping: 'N/A',
+        uptime: 'N/A',
+        playersOnline: '0/0',
+        shouldRegister: false,
+        ...updates
+      };
+      await this.persistData();
+      return this.data.minecraftConfig;
     }
     
     // Preserve existing password if updates.password is undefined (security feature)
