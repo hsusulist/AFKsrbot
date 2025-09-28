@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import useEmblaCarousel from 'embla-carousel-react';
 import { 
   Terminal, 
   Send, 
@@ -27,7 +26,9 @@ import {
   Gamepad2,
   MoreHorizontal,
   Eye,
-  Share2
+  Share2,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 interface ConsoleEntry {
@@ -44,14 +45,23 @@ export default function Console() {
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  // Embla carousel for Quick Commands
-  const [emblaRef, emblaApi] = useEmblaCarousel({ 
-    loop: false, 
-    dragFree: true,
-    containScroll: 'trimSnaps'
-  });
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+  // Quick Commands slider state
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  
+  const quickCommands = [
+    { label: "List Players", cmd: "/list" },
+    { label: "Bot Status", cmd: "/say Bot status: Active at " + new Date().toLocaleTimeString() },
+    { label: "Time Day", cmd: "/time set day" },
+    { label: "Weather Clear", cmd: "/weather clear" },
+    { label: "Save World", cmd: "/save-all" },
+    { label: "Reload", cmd: "/reload" },
+    { label: "Stop Rain", cmd: "/weather clear 1000000" },
+    { label: "Spawn Protection", cmd: "/gamerule keepInventory true" }
+  ];
+  
+  const commandsPerSlide = 4;
+  const totalSlides = Math.ceil(quickCommands.length / commandsPerSlide);
 
   // Get real logs from backend including chat messages
   const { data: logs = [], isLoading, refetch } = useQuery({
@@ -123,28 +133,44 @@ export default function Console() {
     }
   }, [allConsoleEntries]);
 
-  // Initialize Embla carousel for Quick Commands
-  useEffect(() => {
-    if (!emblaApi) return;
+  // Slide navigation functions
+  const nextSlide = () => {
+    if (currentSlide < totalSlides - 1 && !isAnimating) {
+      setIsAnimating(true);
+      setCurrentSlide(prev => prev + 1);
+      setTimeout(() => setIsAnimating(false), 300);
+    }
+  };
 
-    const updateSelectedIndex = () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap());
-    };
+  const prevSlide = () => {
+    if (currentSlide > 0 && !isAnimating) {
+      setIsAnimating(true);
+      setCurrentSlide(prev => prev - 1);
+      setTimeout(() => setIsAnimating(false), 300);
+    }
+  };
 
-    setScrollSnaps(emblaApi.scrollSnapList());
-    updateSelectedIndex();
+  const goToSlide = (slideIndex: number) => {
+    if (slideIndex !== currentSlide && !isAnimating) {
+      setIsAnimating(true);
+      setCurrentSlide(slideIndex);
+      setTimeout(() => setIsAnimating(false), 300);
+    }
+  };
 
-    emblaApi.on('select', updateSelectedIndex);
-    emblaApi.on('reInit', updateSelectedIndex);
-
-    return () => {
-      emblaApi.off('select', updateSelectedIndex);
-      emblaApi.off('reInit', updateSelectedIndex);
-    };
-  }, [emblaApi]);
-
-  const scrollTo = (index: number) => {
-    if (emblaApi) emblaApi.scrollTo(index);
+  // Pop-back animation function
+  const handleCommandClick = (cmd: string, buttonIndex: number) => {
+    setCommand(cmd);
+    
+    // Pop-back animation
+    const button = document.querySelector(`[data-cmd="${buttonIndex}"]`) as HTMLElement;
+    if (button) {
+      button.style.transform = 'scale(0.9)';
+      button.style.transition = 'transform 0.15s ease-out';
+      setTimeout(() => {
+        button.style.transform = 'scale(1)';
+      }, 150);
+    }
   };
 
   const executeCommand = async () => {
@@ -376,73 +402,89 @@ export default function Console() {
 
         {/* Quick Commands - Mobile-Friendly Slider */}
         <Card className="glass-effect p-4">
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-foreground">Quick Commands</h3>
-            {/* Pagination Dots */}
-            <div className="flex gap-1">
-              {scrollSnaps.map((_, index) => (
-                <button
-                  key={index}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ease-out transform ${
-                    index === selectedIndex 
-                      ? 'bg-primary scale-125 w-6' 
-                      : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                  }`}
-                  onClick={() => scrollTo(index)}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
+            
+            {/* Navigation and Dots */}
+            <div className="flex items-center gap-3">
+              {/* Navigation Arrows */}
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={prevSlide}
+                  disabled={currentSlide === 0 || isAnimating}
+                  className="h-6 w-6 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={nextSlide}
+                  disabled={currentSlide === totalSlides - 1 || isAnimating}
+                  className="h-6 w-6 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* Animated Pagination Dots */}
+              <div className="flex gap-1">
+                {Array.from({ length: totalSlides }, (_, index) => (
+                  <button
+                    key={index}
+                    className={`rounded-full transition-all duration-300 ease-out transform ${
+                      index === currentSlide 
+                        ? 'bg-primary scale-125 w-6 h-2' 
+                        : 'bg-muted-foreground/30 hover:bg-muted-foreground/50 w-2 h-2'
+                    }`}
+                    onClick={() => goToSlide(index)}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
           
-          {/* Carousel Container */}
-          <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex gap-2">
-              {[
-                { label: "List Players", cmd: "/list" },
-                { label: "Bot Status", cmd: "/say Bot status: Active at " + new Date().toLocaleTimeString() },
-                { label: "Time Day", cmd: "/time set day" },
-                { label: "Weather Clear", cmd: "/weather clear" },
-                { label: "Save World", cmd: "/save-all" },
-                { label: "Reload", cmd: "/reload" },
-                { label: "Stop Rain", cmd: "/weather clear 1000000" },
-                { label: "Spawn Protection", cmd: "/gamerule keepInventory true" }
-              ].map((quickCmd, index) => (
-                <div 
-                  key={quickCmd.label}
-                  className="flex-none w-32 sm:w-36"
-                  style={{ transform: `translateX(${selectedIndex * -100}%)` }}
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCommand(quickCmd.cmd);
-                      // Pop-back animation effect
-                      const button = document.querySelector(`[data-cmd="${index}"]`) as HTMLElement;
-                      if (button) {
-                        button.style.transform = 'scale(0.95)';
-                        setTimeout(() => {
-                          button.style.transform = 'scale(1)';
-                        }, 150);
-                      }
-                    }}
-                    className="w-full text-xs h-10 transition-all duration-150 ease-out hover:scale-105 active:scale-95"
-                    disabled={!isConnected}
-                    data-cmd={index}
-                  >
-                    {quickCmd.label}
-                  </Button>
+          {/* Slider Container */}
+          <div className="relative overflow-hidden">
+            <div 
+              className="flex transition-transform duration-300 ease-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {Array.from({ length: totalSlides }, (_, slideIndex) => (
+                <div key={slideIndex} className="w-full flex-shrink-0">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {quickCommands
+                      .slice(slideIndex * commandsPerSlide, (slideIndex + 1) * commandsPerSlide)
+                      .map((quickCmd, cmdIndex) => {
+                        const globalIndex = slideIndex * commandsPerSlide + cmdIndex;
+                        return (
+                          <Button
+                            key={quickCmd.label}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCommandClick(quickCmd.cmd, globalIndex)}
+                            className="text-xs h-10 transition-all duration-150 ease-out hover:scale-105"
+                            disabled={!isConnected}
+                            data-cmd={globalIndex}
+                          >
+                            {quickCmd.label}
+                          </Button>
+                        );
+                      })}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
           
-          {/* Mobile Swipe Hint */}
-          <div className="flex justify-center mt-2 md:hidden">
+          {/* Mobile Touch Hint */}
+          <div className="flex justify-center mt-3 md:hidden">
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <MoreHorizontal className="w-3 h-3" />
-              Swipe to see more commands
+              Use arrows or dots to navigate
             </span>
           </div>
         </Card>
