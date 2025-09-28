@@ -42,18 +42,19 @@ export default function Console() {
 
   // Get real logs from backend including chat messages
   const { data: logs = [], isLoading, refetch } = useQuery({
-    queryKey: ['/api/logs', 'minecraft'],
-    queryFn: () => apiRequest('/api/logs?type=minecraft&limit=100'),
+    queryKey: ['/api/logs?type=minecraft&limit=100'],
     refetchInterval: 2000, // Auto-refresh every 2 seconds
+    staleTime: 0, // Always fetch fresh data
   });
 
   // Get bot connection status
   const { data: config } = useQuery({
     queryKey: ['/api/minecraft/config'],
-    queryFn: () => apiRequest('/api/minecraft/config'),
+    refetchInterval: 3000, // Refresh status every 3 seconds
+    staleTime: 0, // Always fetch fresh data
   });
 
-  const isConnected = config?.isConnected || false;
+  const isConnected = (config as any)?.isConnected || false;
   
   // Auto-save command input
   const { data: command, setData: setCommand } = useAutosave<string>(
@@ -63,7 +64,7 @@ export default function Console() {
   );
 
   // Convert backend logs to console entries for display
-  const allConsoleEntries: ConsoleEntry[] = [...logs.map((log: any, index: number) => {
+  const allConsoleEntries: ConsoleEntry[] = [...(logs as any[]).map((log: any, index: number) => {
     let type = 'info';
     let content = log.message || '';
     

@@ -4,7 +4,7 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 30, // 30 seconds - much faster updates
       gcTime: 1000 * 60 * 10, // 10 minutes
       retry: (failureCount, error) => {
         // Don't retry on 4xx errors except 408, 429
@@ -16,7 +16,7 @@ export const queryClient = new QueryClient({
         }
         return failureCount < 3;
       },
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true, // Enable refetch on window focus
     },
     mutations: {
       retry: 1,

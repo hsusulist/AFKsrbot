@@ -25,11 +25,15 @@ export default function Dashboard() {
   // Get Discord bot config and status
   const { data: discordConfig, isLoading: discordLoading } = useQuery({
     queryKey: ['/api/discord/config'],
+    refetchInterval: 3000, // Refresh every 3 seconds for real-time status
+    staleTime: 0, // Always fetch fresh data
   });
 
   // Get Minecraft bot config and status
   const { data: minecraftConfig, isLoading: minecraftLoading } = useQuery({
     queryKey: ['/api/minecraft/config'],
+    refetchInterval: 3000, // Refresh every 3 seconds for real-time status
+    staleTime: 0, // Always fetch fresh data
   });
 
   // Type the Discord config
