@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { BRAND } from "@/lib/constants";
 import { 
   Home, 
   Settings, 
@@ -36,7 +37,7 @@ export default function Sidebar() {
             <Shield className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">AFK Bot</h1>
+            <h1 className="text-lg font-bold text-sidebar-foreground">{BRAND.NAME}</h1>
             <p className="text-sm text-muted-foreground">Control Panel</p>
           </div>
         </div>

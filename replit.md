@@ -1,8 +1,8 @@
-# AFK Bot Dashboard
+# AFKSRBot Dashboard
 
 ## Overview
 
-The AFK Bot Dashboard is a React-based web application designed to manage and control a Discord bot that operates on Minecraft servers. The system provides a comprehensive management interface for monitoring bot status, controlling Discord and Minecraft server connections, viewing logs, managing inventory, and configuring various bot settings. The dashboard serves as a central control panel for administrators to oversee an automated bot that performs anti-AFK behaviors, player interactions, and server monitoring functions.
+The AFKSRBot Dashboard is a React-based web application designed to manage and control a Discord bot that operates on Minecraft servers. The system provides a comprehensive management interface for monitoring bot status, controlling Discord and Minecraft server connections, viewing logs, managing inventory, and configuring various bot settings. The dashboard serves as a central control panel for administrators to oversee an automated bot that performs anti-AFK behaviors, player interactions, and server monitoring functions.
 
 ## User Preferences
 

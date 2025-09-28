@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { BRAND } from "@/lib/constants";
 import { 
   Users, 
   MessageSquare, 
@@ -127,7 +128,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">Monitor and control your Discord bot</p>
+            <p className="text-muted-foreground">{BRAND.DESCRIPTION}</p>
           </div>
           <div className="flex gap-2">
             {!isDiscordConnected ? (

@@ -12,7 +12,7 @@
   },
   "minecraftConfig": {
     "id": "minecraft_server",
-    "serverIP": "teddysmpp.aternos.me",
+    "serverIP": "teddysmpp.aternos.me1",
     "serverPort": "39018",
     "username": "Afkbot",
     "password": "bot1234",
@@ -1730,6 +1730,482 @@
     {
       "id": "1759025393810j8ekt3oqv",
       "timestamp": "2025-09-28T02:09:53.810Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590253958709a9yx1l4w",
+      "timestamp": "2025-09-28T02:09:55.870Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025396139z9q4mqswu",
+      "timestamp": "2025-09-28T02:09:56.139Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025397896yykic56ga",
+      "timestamp": "2025-09-28T02:09:57.896Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025398159kamxwnwj3",
+      "timestamp": "2025-09-28T02:09:58.159Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025398191xaldbkmuu",
+      "timestamp": "2025-09-28T02:09:58.191Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025398737g16ti780c",
+      "timestamp": "2025-09-28T02:09:58.737Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025399248zxwl0hzgx",
+      "timestamp": "2025-09-28T02:09:59.248Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025399938qk9afexbx",
+      "timestamp": "2025-09-28T02:09:59.938Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025400305hmchhotyc",
+      "timestamp": "2025-09-28T02:10:00.305Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025400319ku99xu0gb",
+      "timestamp": "2025-09-28T02:10:00.319Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025400323nheof2i4x",
+      "timestamp": "2025-09-28T02:10:00.323Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025400605a90raxzst",
+      "timestamp": "2025-09-28T02:10:00.605Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025400862kirodnlo7",
+      "timestamp": "2025-09-28T02:10:00.862Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254011635s9p0qxxg",
+      "timestamp": "2025-09-28T02:10:01.163Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025401409vk0keytls",
+      "timestamp": "2025-09-28T02:10:01.409Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025401674rfh1tquwc",
+      "timestamp": "2025-09-28T02:10:01.674Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "175902540169853949svve",
+      "timestamp": "2025-09-28T02:10:01.698Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254021987twufx6vc",
+      "timestamp": "2025-09-28T02:10:02.198Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025441211965a8zebj",
+      "timestamp": "2025-09-28T02:10:41.211Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025443224ftiyaqpzp",
+      "timestamp": "2025-09-28T02:10:43.224Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025443754cbnse40qr",
+      "timestamp": "2025-09-28T02:10:43.754Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025445248hratcq8cj",
+      "timestamp": "2025-09-28T02:10:45.248Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025445770004blwb1b",
+      "timestamp": "2025-09-28T02:10:45.770Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025446022vv9f3v9am",
+      "timestamp": "2025-09-28T02:10:46.022Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025446299yocqkim0g",
+      "timestamp": "2025-09-28T02:10:46.299Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025447267rxpifqysl",
+      "timestamp": "2025-09-28T02:10:47.267Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025447781z5pgof37h",
+      "timestamp": "2025-09-28T02:10:47.781Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025448049wqak3z586",
+      "timestamp": "2025-09-28T02:10:48.049Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254483077nereiw40",
+      "timestamp": "2025-09-28T02:10:48.307Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025448310hqs9nmijq",
+      "timestamp": "2025-09-28T02:10:48.310Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025448577qcp8bzjuy",
+      "timestamp": "2025-09-28T02:10:48.577Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254488386s6eb9ym3",
+      "timestamp": "2025-09-28T02:10:48.838Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025449084zlbr8s0z9",
+      "timestamp": "2025-09-28T02:10:49.084Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025449337owvvp77yv",
+      "timestamp": "2025-09-28T02:10:49.337Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025449381n4qkf213c",
+      "timestamp": "2025-09-28T02:10:49.381Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254496463q10xaxyd",
+      "timestamp": "2025-09-28T02:10:49.646Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254499042litn165s",
+      "timestamp": "2025-09-28T02:10:49.904Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025449994w2rbq8707",
+      "timestamp": "2025-09-28T02:10:49.994Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025450516cslw0o8fm",
+      "timestamp": "2025-09-28T02:10:50.516Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254505201m8ggr3k3",
+      "timestamp": "2025-09-28T02:10:50.520Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025450778qoh6carkr",
+      "timestamp": "2025-09-28T02:10:50.778Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025450782htt0pbdpw",
+      "timestamp": "2025-09-28T02:10:50.782Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254510441m0y6aw51",
+      "timestamp": "2025-09-28T02:10:51.044Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254513103ihos4o1d",
+      "timestamp": "2025-09-28T02:10:51.310Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "175902545131571acgormv",
+      "timestamp": "2025-09-28T02:10:51.315Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254515638cjgit23d",
+      "timestamp": "2025-09-28T02:10:51.563Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254518284u02rzn4t",
+      "timestamp": "2025-09-28T02:10:51.828Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025451838ibzd8ifro",
+      "timestamp": "2025-09-28T02:10:51.838Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025451839avtgpu1q5",
+      "timestamp": "2025-09-28T02:10:51.839Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "175902545209493dsuvn69",
+      "timestamp": "2025-09-28T02:10:52.094Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025452105aa24kv8nq",
+      "timestamp": "2025-09-28T02:10:52.105Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025452364phn8w9tis",
+      "timestamp": "2025-09-28T02:10:52.364Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025452666zx5x9a4pq",
+      "timestamp": "2025-09-28T02:10:52.666Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025452923dh8ip8wkn",
+      "timestamp": "2025-09-28T02:10:52.923Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025452925vxgj906hy",
+      "timestamp": "2025-09-28T02:10:52.925Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025452928nbn3y4nge",
+      "timestamp": "2025-09-28T02:10:52.928Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025453187qylky48h9",
+      "timestamp": "2025-09-28T02:10:53.187Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17590254531883bmb28lco",
+      "timestamp": "2025-09-28T02:10:53.188Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025453189l8fffp6jp",
+      "timestamp": "2025-09-28T02:10:53.189Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "175902545344229bzlm0ef",
+      "timestamp": "2025-09-28T02:10:53.442Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025453444bbaiindwx",
+      "timestamp": "2025-09-28T02:10:53.444Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025453703g6359w8tc",
+      "timestamp": "2025-09-28T02:10:53.703Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025453721i2ec0djkr",
+      "timestamp": "2025-09-28T02:10:53.721Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025453966k26fxcpja",
+      "timestamp": "2025-09-28T02:10:53.966Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025453967zwpi6dvj1",
+      "timestamp": "2025-09-28T02:10:53.967Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025454226rvqwckoz6",
+      "timestamp": "2025-09-28T02:10:54.226Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025454254ksypikbej",
+      "timestamp": "2025-09-28T02:10:54.254Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "1759025454278xedfvxto7",
+      "timestamp": "2025-09-28T02:10:54.278Z",
       "type": "minecraft",
       "level": "info",
       "message": "💾 Server configuration saved"
