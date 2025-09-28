@@ -58,7 +58,7 @@ export function createRoutes(storage: IStorage) {
 
   router.post('/api/discord/connect', async (req, res) => {
     try {
-      console.log('🔧 Connect request body:', req.body);
+      // SECURITY: Never log tokens or sensitive data
       const { token, autoStart, logCommands } = req.body;
       
       // Get existing config to check for stored token
@@ -581,7 +581,7 @@ export function createRoutes(storage: IStorage) {
         updatedConfig = {
           ...existingConfig,
           ...updates,
-          // Preserve existing password if not provided in update
+          // CRITICAL: Preserve existing password if undefined (prevent auto-save wipe)
           password: updates.password !== undefined ? updates.password : existingConfig.password,
           // Don't change connection status when just saving settings
           isConnected: existingConfig.isConnected,
