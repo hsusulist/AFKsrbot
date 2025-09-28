@@ -361,6 +361,20 @@
       "type": "minecraft",
       "level": "info",
       "message": "💬 Hi ClearLag! How's it going?"
+    },
+    {
+      "id": "175903995097069ebesrfw",
+      "timestamp": "2025-09-28T06:12:30.970Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 [ClearLag] Warning Ground items will be removed in 20 seconds!"
+    },
+    {
+      "id": "17590399509702frc5qd04",
+      "timestamp": "2025-09-28T06:12:30.970Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "<ClearLag> Warning Ground items will be removed in 20 seconds!"
     }
   ],
   "inventory": [
