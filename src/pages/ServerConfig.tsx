@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import Layout from "@/components/Layout";
@@ -168,25 +168,54 @@ export default function ServerConfig() {
     disconnectMutation.mutate();
   };
 
-  // Save settings mutation
+  // Save settings mutation - handles both manual and auto-save
   const saveSettingsMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/minecraft/config', {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
-    onSuccess: () => {
-      toast({
-        title: "✅ Settings Saved!",
-        description: "Your server configuration has been saved successfully.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/minecraft/config'] });
+    onSuccess: (data, variables) => {
+      // Reset in-flight flag for auto-saves
+      if (variables.__autoSave) {
+        inFlightRef.current = false;
+      }
+      
+      // Only show toast and invalidate for manual saves, not auto-saves
+      if (!variables.__autoSave) {
+        toast({
+          title: "✅ Settings Saved!",
+          description: "Your server configuration has been saved successfully.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/minecraft/config'] });
+      } else {
+        // For auto-saves, silently update the last saved reference
+        lastSavedConfigRef.current = {
+          serverIP,
+          serverPort,
+          username,
+          password: botPassword || undefined,
+          shouldRegister,
+          version,
+          platform,
+          autoReconnect,
+          useWhitelist,
+        };
+      }
     },
-    onError: (error: any) => {
-      toast({
-        title: "Save Failed",
-        description: error.message || "Failed to save settings",
-        variant: "destructive",
-      });
+    onError: (error: any, variables) => {
+      // Reset in-flight flag for auto-saves
+      if (variables.__autoSave) {
+        inFlightRef.current = false;
+      }
+      
+      // Only show error toast for manual saves
+      if (!variables.__autoSave) {
+        toast({
+          title: "Save Failed",
+          description: error.message || "Failed to save settings",
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -204,49 +233,59 @@ export default function ServerConfig() {
     });
   };
 
-  // Auto-save functionality with debouncing
-  const debouncedAutoSave = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return () => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          if (serverIP && serverPort && username) {
-            saveSettingsMutation.mutate({
-              serverIP,
-              serverPort,
-              username,
-              password: botPassword || undefined,
-              shouldRegister,
-              version,
-              platform,
-              autoReconnect,
-              useWhitelist,
-            });
-          }
-        }, 2000); // Auto-save after 2 seconds of no changes
-      };
-    })(),
-    [serverIP, serverPort, username, botPassword, shouldRegister, version, platform, autoReconnect, useWhitelist, saveSettingsMutation]
-  );
+  // Stable auto-save system - prevents infinite loops and spam
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const inFlightRef = useRef(false);
+  const lastSavedConfigRef = useRef<any>({});
 
-  // Cleanup auto-save timeout on unmount
+  // Auto-save when form values change (silent, no toasts/invalidation)
   useEffect(() => {
+    // Only auto-save if config has loaded
+    if (!typedConfig) return;
+    
+    // Create current config object
+    const currentConfig = {
+      serverIP,
+      serverPort,
+      username,
+      password: botPassword || undefined,
+      shouldRegister,
+      version,
+      platform,
+      autoReconnect,
+      useWhitelist,
+    };
+    
+    // Only save if config has actually changed (dirty check)
+    const hasChanged = JSON.stringify(currentConfig) !== JSON.stringify(lastSavedConfigRef.current);
+    if (!hasChanged) return;
+    
+    // Clear any pending auto-save
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // Don't start new auto-save if one is already in flight
+    if (inFlightRef.current) return;
+    
+    // Debounce auto-save (2 seconds)
+    timeoutRef.current = setTimeout(() => {
+      if (serverIP && serverPort && username && !inFlightRef.current) {
+        inFlightRef.current = true;
+        saveSettingsMutation.mutate({
+          ...currentConfig,
+          __autoSave: true, // Flag to prevent toasts/invalidation
+        });
+      }
+    }, 2000);
+    
+    // Cleanup on unmount
     return () => {
-      // Cleanup any pending timeouts on unmount
-      const cleanup = debouncedAutoSave as any;
-      if (cleanup.timeoutId) {
-        clearTimeout(cleanup.timeoutId);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
-  }, []);
-
-  // Auto-save when form values change
-  useEffect(() => {
-    if (typedConfig) { // Only auto-save if config has loaded (not on initial render)
-      debouncedAutoSave();
-    }
-  }, [serverIP, serverPort, username, botPassword, shouldRegister, version, platform, autoReconnect, useWhitelist, debouncedAutoSave, typedConfig]);
+  }, [serverIP, serverPort, username, botPassword, shouldRegister, version, platform, autoReconnect, useWhitelist, typedConfig]);
 
   return (
     <Layout>

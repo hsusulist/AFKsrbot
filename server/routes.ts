@@ -559,9 +559,11 @@ export function createRoutes(storage: IStorage) {
       
       // Get existing config
       const existingConfig = await storage.getMinecraftConfig();
+      
+      let updatedConfig;
       if (!existingConfig) {
         // Create new config if none exists
-        await storage.saveMinecraftConfig({
+        updatedConfig = {
           serverIP: updates.serverIP || '127.0.0.1',
           serverPort: updates.serverPort || '25565',
           username: updates.username || '',
@@ -573,10 +575,10 @@ export function createRoutes(storage: IStorage) {
           mode24_7: updates.mode24_7 !== undefined ? updates.mode24_7 : true,
           useWhitelist: updates.useWhitelist || false,
           isConnected: false, // Don't change connection status when just saving settings
-        });
+        };
       } else {
         // Update existing config, preserving password if not provided
-        const updatedConfig = {
+        updatedConfig = {
           ...existingConfig,
           ...updates,
           // Preserve existing password if not provided in update
@@ -584,10 +586,32 @@ export function createRoutes(storage: IStorage) {
           // Don't change connection status when just saving settings
           isConnected: existingConfig.isConnected,
         };
-        await storage.saveMinecraftConfig(updatedConfig);
       }
       
-      await addLog('minecraft', 'info', '💾 Server configuration saved');
+      // No-op guard: check if config actually changed (prevent spam saves)
+      if (existingConfig) {
+        const configToCompare = { ...existingConfig };
+        const newConfigToCompare = { ...updatedConfig };
+        
+        // Remove fields that shouldn't be compared
+        delete configToCompare.isConnected;
+        delete newConfigToCompare.isConnected;
+        
+        // Deep compare to see if anything actually changed
+        if (JSON.stringify(configToCompare) === JSON.stringify(newConfigToCompare)) {
+          // No changes detected, return success without saving or logging
+          return res.status(204).json({ success: true, message: 'No changes detected' });
+        }
+      }
+      
+      // Save the config since changes were detected
+      await storage.saveMinecraftConfig(updatedConfig);
+      
+      // Only log if not an auto-save to reduce spam
+      if (!(updates as any).__autoSave) {
+        await addLog('minecraft', 'info', '💾 Server configuration saved');
+      }
+      
       res.json({ success: true, message: 'Settings saved successfully' });
       
     } catch (error) {
