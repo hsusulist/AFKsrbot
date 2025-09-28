@@ -25,7 +25,8 @@
     "ping": "N/A",
     "uptime": "N/A",
     "playersOnline": "0/0",
-    "lastConnected": "2025-09-28T06:20:13.563Z"
+    "lastConnected": "2025-09-28T06:20:13.563Z",
+    "password": "bot123"
   },
   "botStatus": {
     "id": "bot_status",
@@ -177,15 +178,15 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "1759043665102teqws8mdx",
-      "timestamp": "2025-09-28T07:14:25.102Z",
+      "id": "1759043822855opbyg1z0j",
+      "timestamp": "2025-09-28T07:17:02.855Z",
       "type": "minecraft",
       "level": "info",
       "message": "🔄 Auto-reconnecting in 10 seconds..."
     },
     {
-      "id": "1759043675102p65zaqwf4",
-      "timestamp": "2025-09-28T07:14:35.102Z",
+      "id": "1759043832858xdbq1kmts",
+      "timestamp": "2025-09-28T07:17:12.858Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."

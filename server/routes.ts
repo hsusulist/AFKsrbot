@@ -1270,6 +1270,130 @@ export function createRoutes(storage: IStorage) {
         await addLog('minecraft', 'info', `<${username}> ${message}`);
         lastPlayerInteraction = Date.now();
         
+        // Handle /moveto command
+        if (message.toLowerCase().startsWith('/moveto ')) {
+          const args = message.split(' ');
+          if (args.length >= 2) {
+            const targetPlayer = args[1];
+            
+            // Check if target player exists and is online
+            if (!minecraftBot.players[targetPlayer]) {
+              minecraftBot.chat(`Player ${targetPlayer} is not online or not found`);
+              await addLog('minecraft', 'warn', `🚫 /moveto failed: Player ${targetPlayer} not found`);
+              return;
+            }
+            
+            const distance = getDistanceToPlayer(targetPlayer);
+            if (distance === null) {
+              minecraftBot.chat(`Cannot get distance to ${targetPlayer}`);
+              await addLog('minecraft', 'warn', `🚫 /moveto failed: Cannot calculate distance to ${targetPlayer}`);
+              return;
+            }
+            
+            if (distance > 40) {
+              minecraftBot.chat(`${targetPlayer} is too far away (${distance.toFixed(1)} blocks, max 40)`);
+              await addLog('minecraft', 'warn', `🚫 /moveto failed: ${targetPlayer} is ${distance.toFixed(1)} blocks away (exceeds 40 block limit)`);
+              return;
+            }
+            
+            // Start moving to player with collision detection
+            await addLog('minecraft', 'info', `🏃 Moving to ${targetPlayer} (${distance.toFixed(1)} blocks away)`);
+            minecraftBot.chat(`Moving to ${targetPlayer}...`);
+            
+            let moveStartTime = Date.now();
+            let lastPosition = minecraftBot.entity.position.clone();
+            let stuckCounter = 0;
+            const maxStuckTime = 2000; // 2 seconds without progress = stuck
+            
+            const moveInterval = setInterval(async () => {
+              if (!minecraftBot || !minecraftBot.entity) {
+                clearInterval(moveInterval);
+                return;
+              }
+              
+              // Check if target player still exists
+              if (!minecraftBot.players[targetPlayer] || !minecraftBot.players[targetPlayer].entity) {
+                clearInterval(moveInterval);
+                minecraftBot.clearControlStates();
+                minecraftBot.chat(`${targetPlayer} is no longer online`);
+                await addLog('minecraft', 'warn', `🚫 /moveto cancelled: ${targetPlayer} went offline`);
+                return;
+              }
+              
+              const currentDistance = getDistanceToPlayer(targetPlayer);
+              if (currentDistance === null) {
+                clearInterval(moveInterval);
+                minecraftBot.clearControlStates();
+                minecraftBot.chat(`Lost track of ${targetPlayer}`);
+                await addLog('minecraft', 'warn', `🚫 /moveto cancelled: Lost track of ${targetPlayer}`);
+                return;
+              }
+              
+              // Check if target moved too far during movement
+              if (currentDistance > 45) {
+                clearInterval(moveInterval);
+                minecraftBot.clearControlStates();
+                minecraftBot.chat(`${targetPlayer} moved too far away`);
+                await addLog('minecraft', 'warn', `🚫 /moveto cancelled: ${targetPlayer} moved beyond 45 blocks`);
+                return;
+              }
+              
+              // Check if we reached the target (within 2 blocks)
+              if (currentDistance <= 2) {
+                clearInterval(moveInterval);
+                minecraftBot.clearControlStates();
+                minecraftBot.chat(`Reached ${targetPlayer}!`);
+                await addLog('minecraft', 'info', `✅ /moveto completed: Reached ${targetPlayer}`);
+                return;
+              }
+              
+              // Check for wall collision / being stuck
+              const currentPosition = minecraftBot.entity.position;
+              const moved = currentPosition.distanceTo(lastPosition);
+              
+              if (moved < 0.1) { // Barely moved
+                stuckCounter += 200; // Add interval time
+                if (stuckCounter >= maxStuckTime) {
+                  clearInterval(moveInterval);
+                  minecraftBot.clearControlStates();
+                  minecraftBot.chat(`Can't reach ${targetPlayer} - path blocked`);
+                  await addLog('minecraft', 'warn', `🚫 /moveto cancelled: Path to ${targetPlayer} is blocked or stuck`);
+                  return;
+                }
+              } else {
+                stuckCounter = 0; // Reset stuck counter if we moved
+                lastPosition = currentPosition.clone();
+              }
+              
+              // Continue moving towards player
+              const reachedTarget = await moveTowardsPlayer(targetPlayer, 2);
+              if (reachedTarget) {
+                clearInterval(moveInterval);
+                minecraftBot.clearControlStates();
+                minecraftBot.chat(`Reached ${targetPlayer}!`);
+                await addLog('minecraft', 'info', `✅ /moveto completed: Reached ${targetPlayer}`);
+              }
+              
+            }, 200); // Check every 200ms
+            
+            // Safety timeout after 30 seconds
+            setTimeout(() => {
+              clearInterval(moveInterval);
+              if (minecraftBot) {
+                minecraftBot.clearControlStates();
+                minecraftBot.chat(`Movement to ${targetPlayer} timed out`);
+                addLog('minecraft', 'warn', `🚫 /moveto timed out: Could not reach ${targetPlayer} within 30 seconds`);
+              }
+            }, 30000);
+            
+            return; // Don't process other chat logic for this command
+          } else {
+            minecraftBot.chat('Usage: /moveto <playername>');
+            await addLog('minecraft', 'warn', '🚫 /moveto failed: Invalid syntax. Usage: /moveto <playername>');
+            return;
+          }
+        }
+        
         // Player interaction responses
         const lowerMessage = message.toLowerCase();
         const botName = config.username.toLowerCase();
