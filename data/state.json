@@ -22,17 +22,17 @@
     "autoReconnect": true,
     "mode24_7": true,
     "useWhitelist": false,
-    "isConnected": false,
-    "ping": "N/A",
-    "uptime": "N/A",
-    "playersOnline": "0/0",
-    "lastConnected": "2025-09-27T10:53:34.974Z"
+    "isConnected": true,
+    "ping": "0ms",
+    "uptime": "0m",
+    "playersOnline": "2/100",
+    "lastConnected": "2025-09-28T06:06:42.624Z"
   },
   "botStatus": {
     "id": "bot_status",
     "discordConnected": false,
-    "minecraftConnected": false,
-    "lastActivity": "2025-09-28T06:05:15.659Z",
+    "minecraftConnected": true,
+    "lastActivity": "2025-09-28T06:06:42.624Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [
@@ -158,7 +158,172 @@
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
+    },
+    {
+      "id": "1759039600956dn35dkwpc",
+      "timestamp": "2025-09-28T06:06:40.956Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Attempting to register with username: Afkbot"
+    },
+    {
+      "id": "1759039602610r9etcakhg",
+      "timestamp": "2025-09-28T06:06:42.610Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Afkbot joined the game"
+    },
+    {
+      "id": "1759039602612bf0iwbu0h",
+      "timestamp": "2025-09-28T06:06:42.612Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 Afkbot joined the server"
+    },
+    {
+      "id": "17590396026179m767r16k",
+      "timestamp": "2025-09-28T06:06:42.617Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 [PvPManager] You are protected from PvP for 179 seconds"
+    },
+    {
+      "id": "1759039602617pv9se66s9",
+      "timestamp": "2025-09-28T06:06:42.617Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "<PvPManager> You are protected from PvP for 179 seconds"
+    },
+    {
+      "id": "1759039602623xnaw83pce",
+      "timestamp": "2025-09-28T06:06:42.623Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🎮 Bot Afkbot joined the server!"
+    },
+    {
+      "id": "17590396026240df64qexg",
+      "timestamp": "2025-09-28T06:06:42.624Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Attempting to register with password"
+    },
+    {
+      "id": "17590396026309hh7oncsx",
+      "timestamp": "2025-09-28T06:06:42.630Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 §1§0§d§e§n§7§3§b joined the server"
+    },
+    {
+      "id": "1759039602698bbie30vmu",
+      "timestamp": "2025-09-28T06:06:42.698Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 §k§0§6§n§l§k§o§1 joined the server"
+    },
+    {
+      "id": "1759039603269addr95giv",
+      "timestamp": "2025-09-28T06:06:43.269Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Successfully registered!"
+    },
+    {
+      "id": "1759039603508ami3s2cg1",
+      "timestamp": "2025-09-28T06:06:43.508Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Successful login!"
+    },
+    {
+      "id": "1759039603776qpmqzsvqq",
+      "timestamp": "2025-09-28T06:06:43.776Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Welcome Afkbot on Your Minecraft Server server"
+    },
+    {
+      "id": "1759039603776rh90uv025",
+      "timestamp": "2025-09-28T06:06:43.776Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 This server uses AuthMeReloaded protection!"
+    },
+    {
+      "id": "1759039604552hm3d2polm",
+      "timestamp": "2025-09-28T06:06:44.552Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 §1§0§d§e§n§7§3§b left the server"
+    },
+    {
+      "id": "1759039604553vgybcgurh",
+      "timestamp": "2025-09-28T06:06:44.553Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 §k§0§6§n§l§k§o§1 left the server"
+    },
+    {
+      "id": "1759039604624j572pa4s8",
+      "timestamp": "2025-09-28T06:06:44.624Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "📦 Inventory updated: 4 items"
+    },
+    {
+      "id": "17590396062822a0l353pg",
+      "timestamp": "2025-09-28T06:06:46.282Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Hi PvPManager! How's it going?"
+    },
+    {
+      "id": "1759039607625sgdnbm51b",
+      "timestamp": "2025-09-28T06:06:47.625Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🤖 Anti-AFK behaviors activated"
+    },
+    {
+      "id": "1759039649013h1140s0rc",
+      "timestamp": "2025-09-28T06:07:29.013Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Evo_Queen joined the game"
+    },
+    {
+      "id": "1759039649014h3g67hu8z",
+      "timestamp": "2025-09-28T06:07:29.014Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 Evo_Queen joined the server"
     }
   ],
-  "inventory": []
+  "inventory": [
+    {
+      "id": 1759039604624.3472,
+      "name": "stone_sword",
+      "count": 1,
+      "slot": 36
+    },
+    {
+      "id": 1759039604624.8623,
+      "name": "stone_shovel",
+      "count": 1,
+      "slot": 37
+    },
+    {
+      "id": 1759039604624.667,
+      "name": "stone_pickaxe",
+      "count": 1,
+      "slot": 38
+    },
+    {
+      "id": 1759039604624.2864,
+      "name": "stone_axe",
+      "count": 1,
+      "slot": 39
+    }
+  ]
 }
