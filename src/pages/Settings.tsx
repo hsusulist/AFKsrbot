@@ -55,7 +55,6 @@ export default function Settings() {
       debounceMs: 1000,
       onSave: () => {
         // Could send to server here if needed
-        console.log('Settings auto-saved');
       }
     }
   );

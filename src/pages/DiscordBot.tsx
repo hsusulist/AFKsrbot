@@ -47,7 +47,7 @@ export default function DiscordBot() {
     {
       debounceMs: 1000,
       onSave: () => {
-        console.log('Discord bot settings auto-saved');
+        // Settings auto-saved
       }
     }
   );

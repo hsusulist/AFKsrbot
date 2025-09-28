@@ -212,7 +212,6 @@ export default function ServerConfig() {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
           if (serverIP && serverPort && username) {
-            console.log('Auto-saving settings...');
             saveSettingsMutation.mutate({
               serverIP,
               serverPort,
