@@ -724,6 +724,57 @@ export function createRoutes(storage: IStorage) {
     }
   });
 
+  // Add server ping/status check endpoint
+  router.get('/api/minecraft/ping/:serverIP/:serverPort', async (req, res) => {
+    try {
+      const { serverIP, serverPort } = req.params;
+      const net = require('net');
+      
+      await addLog('minecraft', 'info', `🔍 Checking server status: ${serverIP}:${serverPort}`);
+      
+      const socket = new net.Socket();
+      let isConnectable = false;
+      
+      socket.setTimeout(5000); // 5 second timeout
+      
+      socket.on('connect', () => {
+        isConnectable = true;
+        socket.destroy();
+      });
+      
+      socket.on('timeout', () => {
+        socket.destroy();
+      });
+      
+      socket.on('error', (err) => {
+        console.log('Ping error:', err.message);
+      });
+      
+      try {
+        await new Promise((resolve, reject) => {
+          socket.connect(parseInt(serverPort), serverIP, resolve);
+          socket.on('error', reject);
+          socket.on('timeout', reject);
+        });
+      } catch (err) {
+        // Connection failed
+      }
+      
+      const status = isConnectable ? 'online' : 'offline';
+      await addLog('minecraft', 'info', `📡 Server ${serverIP}:${serverPort} is ${status}`);
+      
+      res.json({ 
+        status, 
+        isOnline: isConnectable,
+        serverIP,
+        serverPort: parseInt(serverPort)
+      });
+    } catch (error) {
+      await addLog('minecraft', 'error', `Failed to ping server: ${error.message}`);
+      res.status(500).json({ error: 'Failed to ping server' });
+    }
+  });
+
   router.post('/api/minecraft/connect', async (req, res) => {
     try {
       const config = insertMinecraftServerConfigSchema.parse(req.body);
@@ -774,6 +825,8 @@ export function createRoutes(storage: IStorage) {
         // Password will be used for login after connecting
       }
 
+      await addLog('minecraft', 'info', `🔌 Attempting to connect to ${serverHost}:${serverPort} with username ${config.username}`);
+      
       minecraftBot = mineflayer.createBot(botOptions);
 
       // AFKsrbot state variables
@@ -1355,6 +1408,9 @@ export function createRoutes(storage: IStorage) {
       minecraftBot.on('error', async (err) => {
         console.error('Minecraft bot error:', err);
         
+        // Ensure error gets logged even if addLog fails
+        try {
+        
         // Handle different types of connection errors with specific messages
         let errorMessage = '';
         let errorType = 'error';
@@ -1389,7 +1445,10 @@ export function createRoutes(storage: IStorage) {
             break;
         }
         
-        await addLog('minecraft', errorType === 'warn' ? 'warn' : 'error', errorMessage);
+          await addLog('minecraft', errorType === 'warn' ? 'warn' : 'error', errorMessage);
+        } catch (logError) {
+          console.error('Failed to log minecraft error:', logError);
+        }
         
         // Update connection status when error occurs
         await storage.updateMinecraftConfig({ 

@@ -22,16 +22,16 @@
     "mode24_7": true,
     "useWhitelist": false,
     "isConnected": false,
-    "ping": "0ms",
-    "uptime": "0m",
-    "playersOnline": "2/100",
+    "ping": "N/A",
+    "uptime": "N/A",
+    "playersOnline": "0/0",
     "lastConnected": "2025-09-28T06:20:13.563Z"
   },
   "botStatus": {
     "id": "bot_status",
     "discordConnected": false,
-    "minecraftConnected": true,
-    "lastActivity": "2025-09-28T06:20:13.563Z",
+    "minecraftConnected": false,
+    "lastActivity": "2025-09-28T07:08:27.391Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [
@@ -177,18 +177,32 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "1759040438268h7n9urxcb",
-      "timestamp": "2025-09-28T06:20:38.268Z",
+      "id": "17590433073913v82g9h9c",
+      "timestamp": "2025-09-28T07:08:27.391Z",
       "type": "minecraft",
       "level": "info",
-      "message": "🔄 Auto-reconnecting in 30 seconds..."
+      "message": "🔄 Auto-reconnecting in 0 seconds..."
     },
     {
-      "id": "1759040438268vz8q6jycc",
-      "timestamp": "2025-09-28T06:20:38.268Z",
+      "id": "1759043307393gmkai7z5l",
+      "timestamp": "2025-09-28T07:08:27.393Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
+    },
+    {
+      "id": "17590434510974esntav8s",
+      "timestamp": "2025-09-28T07:10:51.097Z",
+      "type": "minecraft",
+      "level": "error",
+      "message": "Failed to ping server: require is not defined"
+    },
+    {
+      "id": "1759043481576iqxyapfej",
+      "timestamp": "2025-09-28T07:11:21.576Z",
+      "type": "minecraft",
+      "level": "error",
+      "message": "Failed to ping server: require is not defined"
     }
   ],
   "inventory": []
