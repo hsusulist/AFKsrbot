@@ -728,50 +728,73 @@ export function createRoutes(storage: IStorage) {
   router.get('/api/minecraft/ping/:serverIP/:serverPort', async (req, res) => {
     try {
       const { serverIP, serverPort } = req.params;
-      const net = require('net');
+      const { Socket } = await import('node:net');
       
       await addLog('minecraft', 'info', `🔍 Checking server status: ${serverIP}:${serverPort}`);
       
-      const socket = new net.Socket();
+      const socket = new Socket();
       let isConnectable = false;
+      let connectionResult = 'offline';
+      let errorDetails = '';
       
       socket.setTimeout(5000); // 5 second timeout
       
-      socket.on('connect', () => {
-        isConnectable = true;
-        socket.destroy();
-      });
-      
-      socket.on('timeout', () => {
-        socket.destroy();
-      });
-      
-      socket.on('error', (err) => {
-        console.log('Ping error:', err.message);
-      });
-      
-      try {
-        await new Promise((resolve, reject) => {
-          socket.connect(parseInt(serverPort), serverIP, resolve);
-          socket.on('error', reject);
-          socket.on('timeout', reject);
+      const connectionPromise = new Promise((resolve) => {
+        socket.on('connect', () => {
+          isConnectable = true;
+          connectionResult = 'online';
+          socket.destroy();
+          resolve('connected');
         });
-      } catch (err) {
-        // Connection failed
-      }
+        
+        socket.on('timeout', () => {
+          errorDetails = 'Connection timeout (5s)';
+          socket.destroy();
+          resolve('timeout');
+        });
+        
+        socket.on('error', (err) => {
+          errorDetails = err.message;
+          socket.destroy();
+          resolve('error');
+        });
+        
+        try {
+          socket.connect(parseInt(serverPort), serverIP);
+        } catch (err) {
+          errorDetails = err.message;
+          resolve('error');
+        }
+      });
+      
+      await connectionPromise;
       
       const status = isConnectable ? 'online' : 'offline';
-      await addLog('minecraft', 'info', `📡 Server ${serverIP}:${serverPort} is ${status}`);
+      const message = isConnectable 
+        ? `📡 Server ${serverIP}:${serverPort} is online and accepting connections`
+        : `📴 Server ${serverIP}:${serverPort} is offline or unreachable${errorDetails ? ` (${errorDetails})` : ''}`;
+      
+      await addLog('minecraft', isConnectable ? 'info' : 'warn', message);
       
       res.json({ 
         status, 
         isOnline: isConnectable,
         serverIP,
-        serverPort: parseInt(serverPort)
+        serverPort: parseInt(serverPort),
+        message,
+        errorDetails
       });
     } catch (error) {
-      await addLog('minecraft', 'error', `Failed to ping server: ${error.message}`);
-      res.status(500).json({ error: 'Failed to ping server' });
+      const errorMsg = `Failed to ping server: ${error.message}`;
+      await addLog('minecraft', 'error', errorMsg);
+      res.json({ 
+        status: 'error', 
+        isOnline: false,
+        serverIP: req.params.serverIP,
+        serverPort: parseInt(req.params.serverPort),
+        message: errorMsg,
+        errorDetails: error.message
+      });
     }
   });
 
@@ -799,6 +822,50 @@ export function createRoutes(storage: IStorage) {
           serverPort = parts[1];
           await addLog('minecraft', 'info', `Parsed server address: ${serverHost}:${serverPort}`);
         }
+      }
+
+      // First, ping the server to check if it's online
+      await addLog('minecraft', 'info', `🔍 Checking server connectivity before connecting...`);
+      
+      try {
+        const { Socket } = await import('node:net');
+        const socket = new Socket();
+        let isOnline = false;
+        
+        const pingResult = await new Promise((resolve) => {
+          socket.setTimeout(3000);
+          
+          socket.on('connect', () => {
+            isOnline = true;
+            socket.destroy();
+            resolve('online');
+          });
+          
+          socket.on('timeout', () => {
+            socket.destroy();
+            resolve('timeout');
+          });
+          
+          socket.on('error', () => {
+            socket.destroy();
+            resolve('offline');
+          });
+          
+          socket.connect(parseInt(serverPort), serverHost);
+        });
+        
+        if (!isOnline) {
+          await addLog('minecraft', 'warn', `📴 Server ${serverHost}:${serverPort} appears to be offline or unreachable. If this is an Aternos server, please start it first and try again.`);
+          return res.status(202).json({ 
+            success: false, 
+            message: 'Server appears offline/sleeping. Please start the server and try again.',
+            serverStatus: 'offline'
+          });
+        }
+        
+        await addLog('minecraft', 'info', `✅ Server ${serverHost}:${serverPort} is online and ready for connection`);
+      } catch (pingError) {
+        await addLog('minecraft', 'warn', `Could not verify server status: ${pingError.message}. Proceeding with connection attempt...`);
       }
 
       // Disconnect existing bot if any

@@ -177,32 +177,18 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "17590433073913v82g9h9c",
-      "timestamp": "2025-09-28T07:08:27.391Z",
+      "id": "1759043665102teqws8mdx",
+      "timestamp": "2025-09-28T07:14:25.102Z",
       "type": "minecraft",
       "level": "info",
-      "message": "🔄 Auto-reconnecting in 0 seconds..."
+      "message": "🔄 Auto-reconnecting in 10 seconds..."
     },
     {
-      "id": "1759043307393gmkai7z5l",
-      "timestamp": "2025-09-28T07:08:27.393Z",
+      "id": "1759043675102p65zaqwf4",
+      "timestamp": "2025-09-28T07:14:35.102Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
-    },
-    {
-      "id": "17590434510974esntav8s",
-      "timestamp": "2025-09-28T07:10:51.097Z",
-      "type": "minecraft",
-      "level": "error",
-      "message": "Failed to ping server: require is not defined"
-    },
-    {
-      "id": "1759043481576iqxyapfej",
-      "timestamp": "2025-09-28T07:11:21.576Z",
-      "type": "minecraft",
-      "level": "error",
-      "message": "Failed to ping server: require is not defined"
     }
   ],
   "inventory": []
