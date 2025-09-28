@@ -178,32 +178,18 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "1759044178446r22a3w4bw",
-      "timestamp": "2025-09-28T07:22:58.446Z",
+      "id": "1759044467195p6h2z4zs9",
+      "timestamp": "2025-09-28T07:27:47.195Z",
       "type": "minecraft",
       "level": "info",
       "message": "🔄 Auto-reconnecting in 10 seconds..."
     },
     {
-      "id": "17590441884467jlh6wlby",
-      "timestamp": "2025-09-28T07:23:08.446Z",
+      "id": "1759044477196lbibcaeyb",
+      "timestamp": "2025-09-28T07:27:57.196Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
-    },
-    {
-      "id": "1759044203485qu4926yvb",
-      "timestamp": "2025-09-28T07:23:23.485Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "🔍 Checking server status: teddysmpp.aternos.me:39018"
-    },
-    {
-      "id": "1759044204014o4l0nqiz3",
-      "timestamp": "2025-09-28T07:23:24.014Z",
-      "type": "minecraft",
-      "level": "info",
-      "message": "📡 Server teddysmpp.aternos.me:39018 is online and accepting connections"
     }
   ],
   "inventory": []

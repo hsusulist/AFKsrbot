@@ -23,7 +23,10 @@ import {
   MessageCircle,
   UserPlus,
   UserMinus,
-  Gamepad2
+  Gamepad2,
+  MoreHorizontal,
+  Eye,
+  Share2
 } from "lucide-react";
 
 interface ConsoleEntry {
