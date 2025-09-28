@@ -298,6 +298,69 @@
       "type": "minecraft",
       "level": "info",
       "message": "🟢 Evo_Queen joined the server"
+    },
+    {
+      "id": "17590397430422s30mikye",
+      "timestamp": "2025-09-28T06:09:03.042Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 Evo_Queen left the server"
+    },
+    {
+      "id": "1759039743043ag8vm0jzm",
+      "timestamp": "2025-09-28T06:09:03.043Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Evo_Queen left the game"
+    },
+    {
+      "id": "1759039749431qn80i2wn2",
+      "timestamp": "2025-09-28T06:09:09.431Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Evo_Queen joined the game"
+    },
+    {
+      "id": "17590397494321kq9l6u6r",
+      "timestamp": "2025-09-28T06:09:09.432Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 Evo_Queen joined the server"
+    },
+    {
+      "id": "1759039781467rgbo7qf4i",
+      "timestamp": "2025-09-28T06:09:41.467Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 [PvPManager] Your PvP protection has expired! You can now be attacked!"
+    },
+    {
+      "id": "1759039781467t4ohbsw9x",
+      "timestamp": "2025-09-28T06:09:41.467Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "<PvPManager> Your PvP protection has expired! You can now be attacked!"
+    },
+    {
+      "id": "1759039910971mzs6421sh",
+      "timestamp": "2025-09-28T06:11:50.971Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 [ClearLag] Warning Ground items will be removed in 60 seconds!"
+    },
+    {
+      "id": "1759039910971jmppx79xu",
+      "timestamp": "2025-09-28T06:11:50.971Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "<ClearLag> Warning Ground items will be removed in 60 seconds!"
+    },
+    {
+      "id": "1759039914592ko359ia57",
+      "timestamp": "2025-09-28T06:11:54.592Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Hi ClearLag! How's it going?"
     }
   ],
   "inventory": [
