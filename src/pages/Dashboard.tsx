@@ -225,24 +225,13 @@ export default function Dashboard() {
               Recent Activity
             </h3>
             <div className="space-y-3">
-              {[
-                { user: "User123", action: "Used !help command", time: "2 mins ago", status: "success" },
-                { user: "Bot", action: "Connection established", time: "5 mins ago", status: "success" },
-                { user: "Admin", action: "Changed bot settings", time: "10 mins ago", status: "info" },
-                { user: "User456", action: "Failed command execution", time: "15 mins ago", status: "error" }
-              ].map((activity, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className={`w-2 h-2 rounded-full ${
-                    activity.status === "success" ? "bg-success" :
-                    activity.status === "error" ? "bg-error" : "bg-primary"
-                  }`} />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">by {activity.user}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{activity.time}</span>
+              <div className="flex items-center justify-center p-8 text-center">
+                <div className="text-muted-foreground">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No recent activity</p>
+                  <p className="text-xs mt-1">Activity will appear here when your bot is active</p>
                 </div>
-              ))}
+              </div>
             </div>
           </Card>
         </div>
