@@ -366,7 +366,7 @@ export default function ServerConfig() {
                 <div>
                   <Label className="text-sm font-medium text-foreground">Register Account</Label>
                   <p className="text-xs text-muted-foreground">
-                    {shouldRegister ? "Bot will register with password" : "Bot will login with password"}
+                    {shouldRegister ? "Bot will register with password (AuthMe compatible)" : "Bot will login with password (AuthMe compatible)"}
                   </p>
                 </div>
                 <Switch
