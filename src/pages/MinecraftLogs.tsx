@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Gamepad2, 
   Search, 
@@ -13,11 +14,24 @@ import {
   UserPlus,
   UserMinus,
   Zap,
-  Skull
+  Skull,
+  Terminal,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Info
 } from "lucide-react";
 
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+
+interface ConsoleEntry {
+  id: number;
+  timestamp: string;
+  type: "command" | "response" | "error" | "info" | "chat" | "join" | "leave";
+  content: string;
+  user?: string;
+}
 
 const getTypeColor = (type: string) => {
   switch (type) {
@@ -33,6 +47,7 @@ const getTypeColor = (type: string) => {
 export default function MinecraftLogs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("all");
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Fetch real logs from backend
   const { data: logs = [], isLoading, refetch } = useQuery({
@@ -41,14 +56,85 @@ export default function MinecraftLogs() {
     refetchInterval: 2000, // Auto-refresh every 2 seconds
   });
 
-  const filteredLogs = logs.filter((log: any) => {
-    const searchText = `${log.message || ''} ${log.details || ''}`.toLowerCase();
+  // Convert backend logs to console entries for display (same as Console.tsx)
+  const allConsoleEntries: ConsoleEntry[] = logs.map((log: any, index: number) => {
+    let type = 'info';
+    let content = log.message || '';
+    
+    // Determine entry type based on log content
+    if (content.includes('executed:') || content.includes('/')) {
+      type = 'command';
+    } else if (content.includes('<') && content.includes('>')) {
+      type = 'chat';
+      // Extract chat message format: "<username> message"
+      const chatMatch = content.match(/<([^>]+)>\s*(.*)/);
+      if (chatMatch) {
+        content = `[${chatMatch[1]}] ${chatMatch[2]}`;
+      }
+    } else if (content.includes('joined') || content.includes('🟢')) {
+      type = 'join';
+    } else if (content.includes('left') || content.includes('🔴')) {
+      type = 'leave';
+    } else if (log.level === 'error') {
+      type = 'error';
+    }
+    
+    return {
+      id: index + 1000, // Use offset to avoid conflicts
+      timestamp: new Date(log.createdAt).toLocaleTimeString("en-US", { 
+        hour12: false, 
+        hour: "2-digit", 
+        minute: "2-digit", 
+        second: "2-digit" 
+      }),
+      type: type as "command" | "response" | "error" | "info" | "chat" | "join" | "leave",
+      content: content,
+      user: type === 'chat' ? 'Game' : undefined
+    };
+  });
+
+  // Auto-scroll to bottom when new entries arrive
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
+    }
+  }, [allConsoleEntries]);
+
+  const filteredEntries = allConsoleEntries.filter((entry) => {
+    const searchText = entry.content.toLowerCase();
     const matchesSearch = searchText.includes(searchTerm.toLowerCase());
-    const matchesType = selectedType === "all" || log.level === selectedType;
+    const matchesType = selectedType === "all" || entry.type === selectedType;
     return matchesSearch && matchesType;
   });
 
-  const logTypes = ["all", "chat", "join", "leave", "death", "command"];
+  const logTypes = ["all", "chat", "join", "leave", "error", "command", "info"];
+
+  const getEntryIcon = (type: string) => {
+    switch (type) {
+      case "command": return <Terminal className="w-4 h-4 text-primary" />;
+      case "response": return <CheckCircle className="w-4 h-4 text-success" />;
+      case "error": return <XCircle className="w-4 h-4 text-error" />;
+      case "chat": return <MessageCircle className="w-4 h-4 text-accent" />;
+      case "join": return <UserPlus className="w-4 h-4 text-success" />;
+      case "leave": return <UserMinus className="w-4 h-4 text-warning" />;
+      default: return <Info className="w-4 h-4 text-muted-foreground" />;
+    }
+  };
+
+  const getEntryTextColor = (type: string) => {
+    switch (type) {
+      case "command": return "text-primary";
+      case "response": return "text-success";
+      case "error": return "text-error";
+      case "chat": return "text-accent";
+      case "join": return "text-success";
+      case "leave": return "text-warning";
+      default: return "text-foreground";
+    }
+  };
 
   return (
     <Layout>
@@ -105,80 +191,58 @@ export default function MinecraftLogs() {
           </div>
         </Card>
 
-        {/* Game Logs */}
-        <Card className="glass-effect">
-          <div className="divide-y divide-border">
-            {isLoading ? (
-              // Loading skeletons
-              Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />
-                    <div className="flex-1 space-y-2">
-                      <div className="flex gap-2">
-                        <div className="h-5 w-16 bg-muted rounded animate-pulse" />
-                        <div className="h-4 w-20 bg-muted rounded animate-pulse" />
-                      </div>
-                      <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
-                    </div>
+        {/* Console Output - Read Only */}
+        <Card className="glass-effect p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Terminal className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">Minecraft Console (Read-Only)</h2>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {filteredEntries.length} entries
+            </div>
+          </div>
+          
+          <div className="bg-background/80 border border-border rounded-lg overflow-hidden">
+            <ScrollArea className="h-[500px]" ref={scrollAreaRef}>
+              <div className="p-4 space-y-1 font-mono text-sm">
+                {isLoading ? (
+                  <div className="text-muted-foreground">Loading console logs...</div>
+                ) : filteredEntries.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Terminal className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <div className="text-muted-foreground">No Minecraft logs available.</div>
+                    <div className="text-muted-foreground text-xs mt-2">Connect the bot to a server to see live logs here.</div>
                   </div>
-                </div>
-              ))
-            ) : filteredLogs.length === 0 ? (
-              <div className="p-12 text-center">
-                <Gamepad2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No Minecraft Logs</h3>
-                <p className="text-muted-foreground">No Minecraft activity found. Connect your bot to a server to see logs here.</p>
-              </div>
-            ) : (
-              filteredLogs.map((log) => {
-                // Parse timestamp if it's a string
-                const timestamp = typeof log.createdAt === 'string' 
-                  ? new Date(log.createdAt).toLocaleString()
-                  : 'Unknown time';
-                  
-                // Get appropriate icon based on log level or type
-                const getIcon = () => {
-                  if (log.message && log.message.includes('joined')) return UserPlus;
-                  if (log.message && log.message.includes('left')) return UserMinus;
-                  if (log.message && (log.message.includes('died') || log.message.includes('slain'))) return Skull;
-                  if (log.message && log.message.includes('command')) return Zap;
-                  return MessageCircle;
-                };
-                const IconComponent = getIcon();
-                
-                return (
-                  <div key={log.id} className="p-4 hover:bg-muted/50 transition-all duration-150 ease-out">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <IconComponent className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge 
-                            className={getTypeColor(log.level || 'info')} 
-                            variant="outline"
-                          >
-                            {log.level || 'info'}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {timestamp}
+                ) : (
+                  filteredEntries.map((entry) => (
+                    <div key={entry.id} className="flex items-start gap-3 hover:bg-muted/30 px-2 py-1 rounded transition-colors">
+                      <span className="text-muted-foreground text-xs mt-0.5 min-w-[60px]">
+                        {entry.timestamp}
+                      </span>
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {getEntryIcon(entry.type)}
+                        <span className={`${getEntryTextColor(entry.type)} break-all`}>
+                          {entry.content}
+                        </span>
+                        {entry.user && (
+                          <span className="text-muted-foreground text-xs">
+                            ({entry.user})
                           </span>
-                        </div>
-                        <p className="text-sm text-foreground">
-                          {log.message || 'No message'}
-                        </p>
-                        {log.details && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {log.details}
-                          </p>
                         )}
                       </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+          
+          <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Info className="w-4 h-4" />
+              <span>This is a read-only view of Minecraft server logs. Use the Console page to send commands.</span>
+            </div>
           </div>
         </Card>
 
@@ -189,7 +253,7 @@ export default function MinecraftLogs() {
               <MessageCircle className="w-6 h-6 text-primary" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {logs.filter((log: any) => log.message && log.message.includes('💬')).length}
+                  {filteredEntries.filter(entry => entry.type === 'chat').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Chat Messages</p>
               </div>
@@ -201,7 +265,7 @@ export default function MinecraftLogs() {
               <UserPlus className="w-6 h-6 text-success" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {logs.filter((log: any) => log.message && log.message.includes('joined')).length}
+                  {filteredEntries.filter(entry => entry.type === 'join').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Player Joins</p>
               </div>
@@ -213,7 +277,7 @@ export default function MinecraftLogs() {
               <UserMinus className="w-6 h-6 text-warning" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {logs.filter((log: any) => log.message && log.message.includes('left')).length}
+                  {filteredEntries.filter(entry => entry.type === 'leave').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Player Leaves</p>
               </div>
@@ -225,9 +289,9 @@ export default function MinecraftLogs() {
               <Skull className="w-6 h-6 text-error" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {logs.filter((log: any) => log.message && (log.message.includes('died') || log.message.includes('slain'))).length}
+                  {filteredEntries.filter(entry => entry.type === 'error').length}
                 </p>
-                <p className="text-xs text-muted-foreground">Deaths</p>
+                <p className="text-xs text-muted-foreground">Errors</p>
               </div>
             </div>
           </Card>
@@ -237,7 +301,7 @@ export default function MinecraftLogs() {
               <Zap className="w-6 h-6 text-accent" />
               <div>
                 <p className="text-xl font-bold text-foreground">
-                  {logs.filter((log: any) => log.message && log.message.includes('Console command')).length}
+                  {filteredEntries.filter(entry => entry.type === 'command').length}
                 </p>
                 <p className="text-xs text-muted-foreground">Commands</p>
               </div>

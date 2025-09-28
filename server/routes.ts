@@ -881,6 +881,9 @@ export function createRoutes(storage: IStorage) {
         username: config.username,
         version: config.version,
         auth: 'offline', // Enable cracked/offline mode
+        hideErrors: false, // Show connection errors for debugging
+        checkTimeoutInterval: 30000, // 30 second timeout
+        keepAlive: true, // Keep connection alive
       };
 
       // Add auth if password provided
@@ -1230,14 +1233,23 @@ export function createRoutes(storage: IStorage) {
 
       // Handle password login/register and start behaviors after spawn
       minecraftBot.once('spawn', async () => {
+        await addLog('minecraft', 'info', `🎮 Bot ${config.username} spawned successfully!`);
+        
         if (config.password) {
-          if (config.shouldRegister) {
-            minecraftBot.chat(`/register ${config.password} ${config.password}`);
-            await addLog('minecraft', 'info', 'Attempting to register with password');
-          } else {
-            minecraftBot.chat(`/login ${config.password}`);
-            await addLog('minecraft', 'info', 'Attempting to login with password');
-          }
+          // Wait a moment for the server to be ready
+          setTimeout(async () => {
+            try {
+              if (config.shouldRegister) {
+                minecraftBot.chat(`/register ${config.password} ${config.password}`);
+                await addLog('minecraft', 'info', '📝 Attempting to register with password');
+              } else {
+                minecraftBot.chat(`/login ${config.password}`);
+                await addLog('minecraft', 'info', '🔐 Attempting to login with password');
+              }
+            } catch (error) {
+              await addLog('minecraft', 'error', `Authentication failed: ${error.message}`);
+            }
+          }, 2000); // Wait 2 seconds after spawn
         }
         
         // Start anti-AFK behaviors
@@ -1639,6 +1651,12 @@ export function createRoutes(storage: IStorage) {
           await addLog('minecraft', errorType === 'warn' ? 'warn' : 'error', errorMessage);
         } catch (logError) {
           console.error('Failed to log minecraft error:', logError);
+        }
+        
+        // Handle specific connection reset issues
+        if (err.code === 'ECONNRESET') {
+          // This often happens when server rejects the connection immediately
+          await addLog('minecraft', 'warn', '🔄 Connection reset by server - this may be due to authentication issues, server overload, or version mismatch. Auto-reconnect will retry...');
         }
         
         // Update connection status when error occurs

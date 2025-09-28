@@ -15,7 +15,7 @@
     "serverIP": "teddysmpp.aternos.me",
     "serverPort": "39018",
     "username": "Afkbot",
-    "shouldRegister": true,
+    "shouldRegister": false,
     "version": "1.20.4",
     "platform": "java",
     "autoReconnect": true,
@@ -32,7 +32,7 @@
     "id": "bot_status",
     "discordConnected": false,
     "minecraftConnected": false,
-    "lastActivity": "2025-09-28T07:08:27.391Z",
+    "lastActivity": "2025-09-28T07:17:37.316Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [
@@ -178,18 +178,32 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "1759043822855opbyg1z0j",
-      "timestamp": "2025-09-28T07:17:02.855Z",
+      "id": "1759044178446r22a3w4bw",
+      "timestamp": "2025-09-28T07:22:58.446Z",
       "type": "minecraft",
       "level": "info",
       "message": "🔄 Auto-reconnecting in 10 seconds..."
     },
     {
-      "id": "1759043832858xdbq1kmts",
-      "timestamp": "2025-09-28T07:17:12.858Z",
+      "id": "17590441884467jlh6wlby",
+      "timestamp": "2025-09-28T07:23:08.446Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
+    },
+    {
+      "id": "1759044203485qu4926yvb",
+      "timestamp": "2025-09-28T07:23:23.485Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍 Checking server status: teddysmpp.aternos.me:39018"
+    },
+    {
+      "id": "1759044204014o4l0nqiz3",
+      "timestamp": "2025-09-28T07:23:24.014Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "📡 Server teddysmpp.aternos.me:39018 is online and accepting connections"
     }
   ],
   "inventory": []
