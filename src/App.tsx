@@ -8,6 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import Index from "./pages/Index";
 import DiscordBot from "./pages/DiscordBot";
 import ServerConfig from "./pages/ServerConfig";
+import Aternos from "./pages/Aternos";
 import Inventory from "./pages/Inventory";
 import DiscordLogs from "./pages/DiscordLogs";
 import MinecraftLogs from "./pages/MinecraftLogs";
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/discord-bot" element={<DiscordBot />} />
           <Route path="/server" element={<ServerConfig />} />
+          <Route path="/aternos" element={<Aternos />} />
           <Route path="/inventory" element={<Inventory />} />
           <Route path="/discord-logs" element={<DiscordLogs />} />
           <Route path="/minecraft-logs" element={<MinecraftLogs />} />

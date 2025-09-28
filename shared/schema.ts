@@ -71,6 +71,21 @@ export const InventoryItemSchema = z.object({
   metadata: z.string().optional(),
 });
 
+// Aternos Configuration Schema
+export const AternosConfigSchema = z.object({
+  id: z.string().default('aternos_config'),
+  username: z.string().min(1, 'Aternos username is required'),
+  password: z.string().min(1, 'Aternos password is required'),
+  serverName: z.string().optional(),
+  isLoggedIn: z.boolean().default(false),
+  lastLogin: z.string().optional(),
+  serverStatus: z.enum(['offline', 'starting', 'online', 'stopping', 'unknown']).default('unknown'),
+  autoStart: z.boolean().default(false),
+  playerCount: z.string().default('0/20'),
+  serverIP: z.string().optional(),
+  version: z.string().optional(),
+});
+
 // Insert schemas using zod - make token optional for reconnection
 export const insertDiscordBotConfigSchema = DiscordBotConfigSchema.omit({ id: true }).extend({
   token: z.string().optional(), // Allow optional token for reconnection
@@ -80,6 +95,7 @@ export const insertBotStatusSchema = BotStatusSchema.omit({ id: true });
 export const insertConsoleCommandSchema = ConsoleCommandSchema.omit({ id: true, timestamp: true });
 export const insertLogEntrySchema = LogEntrySchema.omit({ id: true, timestamp: true });
 export const insertInventoryItemSchema = InventoryItemSchema.omit({ id: true });
+export const insertAternosConfigSchema = AternosConfigSchema.omit({ id: true });
 
 // Types
 export type DiscordBotConfig = z.infer<typeof DiscordBotConfigSchema>;
@@ -88,6 +104,7 @@ export type BotStatus = z.infer<typeof BotStatusSchema>;
 export type ConsoleCommand = z.infer<typeof ConsoleCommandSchema>;
 export type LogEntry = z.infer<typeof LogEntrySchema>;
 export type InventoryItem = z.infer<typeof InventoryItemSchema>;
+export type AternosConfig = z.infer<typeof AternosConfigSchema>;
 
 export type InsertDiscordBotConfig = z.infer<typeof insertDiscordBotConfigSchema>;
 export type InsertMinecraftServerConfig = z.infer<typeof insertMinecraftServerConfigSchema>;
@@ -95,3 +112,4 @@ export type InsertBotStatus = z.infer<typeof insertBotStatusSchema>;
 export type InsertConsoleCommand = z.infer<typeof insertConsoleCommandSchema>;
 export type InsertLogEntry = z.infer<typeof insertLogEntrySchema>;
 export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
+export type InsertAternosConfig = z.infer<typeof insertAternosConfigSchema>;

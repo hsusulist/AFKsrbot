@@ -5,12 +5,14 @@ import type {
   ConsoleCommand,
   LogEntry,
   InventoryItem,
+  AternosConfig,
   InsertDiscordBotConfig,
   InsertMinecraftServerConfig,
   InsertBotStatus,
   InsertConsoleCommand,
   InsertLogEntry,
   InsertInventoryItem,
+  InsertAternosConfig,
 } from "../shared/schema";
 
 export interface IStorage {
@@ -41,6 +43,11 @@ export interface IStorage {
   getInventory(): Promise<InventoryItem[]>;
   updateInventory(items: InventoryItem[]): Promise<void>;
   
+  // Aternos Config
+  getAternosConfig(): Promise<AternosConfig | null>;
+  saveAternosConfig(config: InsertAternosConfig): Promise<AternosConfig>;
+  updateAternosConfig(updates: Partial<AternosConfig>): Promise<AternosConfig>;
+  
   // Initialize storage
   init(): Promise<void>;
 }
@@ -52,6 +59,7 @@ export class MemStorage implements IStorage {
   private consoleCommands: ConsoleCommand[] = [];
   private logs: LogEntry[] = [];
   private inventory: InventoryItem[] = [];
+  private aternosConfig: AternosConfig | null = null;
 
   async init(): Promise<void> {
     // Initialize with default values
@@ -164,5 +172,22 @@ export class MemStorage implements IStorage {
 
   async updateInventory(items: InventoryItem[]): Promise<void> {
     this.inventory = items;
+  }
+
+  async getAternosConfig(): Promise<AternosConfig | null> {
+    return this.aternosConfig;
+  }
+
+  async saveAternosConfig(config: InsertAternosConfig): Promise<AternosConfig> {
+    this.aternosConfig = { id: 'aternos_config', ...config };
+    return this.aternosConfig;
+  }
+
+  async updateAternosConfig(updates: Partial<AternosConfig>): Promise<AternosConfig> {
+    if (!this.aternosConfig) {
+      throw new Error('Aternos config not found');
+    }
+    this.aternosConfig = { ...this.aternosConfig, ...updates };
+    return this.aternosConfig;
   }
 }

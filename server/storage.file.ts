@@ -7,12 +7,14 @@ import type {
   ConsoleCommand,
   LogEntry,
   InventoryItem,
+  AternosConfig,
   InsertDiscordBotConfig,
   InsertMinecraftServerConfig,
   InsertBotStatus,
   InsertConsoleCommand,
   InsertLogEntry,
   InsertInventoryItem,
+  InsertAternosConfig,
 } from "../shared/schema";
 import { IStorage } from './storage';
 
@@ -23,6 +25,7 @@ interface StorageData {
   consoleCommands: ConsoleCommand[];
   logs: LogEntry[];
   inventory: InventoryItem[];
+  aternosConfig: AternosConfig | null;
 }
 
 export class FileStorage implements IStorage {
@@ -35,6 +38,7 @@ export class FileStorage implements IStorage {
     consoleCommands: [],
     logs: [],
     inventory: [],
+    aternosConfig: null,
   };
   private writeTimeout: NodeJS.Timeout | null = null;
 
@@ -220,5 +224,24 @@ export class FileStorage implements IStorage {
   async updateInventory(items: InventoryItem[]): Promise<void> {
     this.data.inventory = items;
     await this.persistData();
+  }
+
+  async getAternosConfig(): Promise<AternosConfig | null> {
+    return this.data.aternosConfig;
+  }
+
+  async saveAternosConfig(config: InsertAternosConfig): Promise<AternosConfig> {
+    this.data.aternosConfig = { id: 'aternos_config', ...config };
+    await this.persistData();
+    return this.data.aternosConfig;
+  }
+
+  async updateAternosConfig(updates: Partial<AternosConfig>): Promise<AternosConfig> {
+    if (!this.data.aternosConfig) {
+      throw new Error('Aternos config not found');
+    }
+    this.data.aternosConfig = { ...this.data.aternosConfig, ...updates };
+    await this.persistData();
+    return this.data.aternosConfig;
   }
 }

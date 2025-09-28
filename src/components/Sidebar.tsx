@@ -10,13 +10,15 @@ import {
   Package,
   Activity,
   Shield,
-  HelpCircle
+  HelpCircle,
+  Cloud
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Discord Bot", href: "/discord-bot", icon: Bot },
   { name: "Server Config", href: "/server", icon: Server },
+  { name: "Aternos", href: "/aternos", icon: Cloud },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Discord Logs", href: "/discord-logs", icon: FileText },
   { name: "Minecraft Logs", href: "/minecraft-logs", icon: Activity },

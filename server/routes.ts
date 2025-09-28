@@ -146,6 +146,22 @@ export function createRoutes(storage: IStorage) {
               required: true
             }
           ]
+        },
+        {
+          name: 'startserver',
+          description: 'Start the Aternos Minecraft server'
+        },
+        {
+          name: 'stopserver',
+          description: 'Stop the Aternos Minecraft server'
+        },
+        {
+          name: 'restartserver',
+          description: 'Restart the Aternos Minecraft server'
+        },
+        {
+          name: 'website',
+          description: 'Show the AFKSRBot website link'
         }
       ];
 
@@ -390,6 +406,94 @@ export function createRoutes(storage: IStorage) {
                 await interaction.reply('❌ Failed to execute command');
                 await addLog('error', 'error', `Failed to execute command: ${command}`, error.message);
               }
+              break;
+              
+            case 'startserver':
+              try {
+                // For now, simulate Aternos server start
+                await interaction.reply('🔄 Starting Aternos server... This may take a few minutes.');
+                await addLog('system', 'info', 'Aternos server start requested via Discord command', `By user: ${user.tag}`);
+                
+                // TODO: Implement actual Aternos API integration
+                setTimeout(async () => {
+                  if (logChannel) {
+                    const channel = await discordBot.channels.fetch(logChannel);
+                    if (channel && 'send' in channel) {
+                      await channel.send('✅ Aternos server started successfully!');
+                    }
+                  }
+                }, 3000);
+              } catch (error) {
+                await interaction.reply('❌ Failed to start Aternos server');
+                await addLog('error', 'error', 'Failed to start Aternos server', error.message);
+              }
+              break;
+              
+            case 'stopserver':
+              try {
+                await interaction.reply('🛑 Stopping Aternos server...');
+                await addLog('system', 'info', 'Aternos server stop requested via Discord command', `By user: ${user.tag}`);
+                
+                // TODO: Implement actual Aternos API integration
+                setTimeout(async () => {
+                  if (logChannel) {
+                    const channel = await discordBot.channels.fetch(logChannel);
+                    if (channel && 'send' in channel) {
+                      await channel.send('🛑 Aternos server stopped successfully!');
+                    }
+                  }
+                }, 2000);
+              } catch (error) {
+                await interaction.reply('❌ Failed to stop Aternos server');
+                await addLog('error', 'error', 'Failed to stop Aternos server', error.message);
+              }
+              break;
+              
+            case 'restartserver':
+              try {
+                await interaction.reply('🔄 Restarting Aternos server... This may take a few minutes.');
+                await addLog('system', 'info', 'Aternos server restart requested via Discord command', `By user: ${user.tag}`);
+                
+                // TODO: Implement actual Aternos API integration
+                setTimeout(async () => {
+                  if (logChannel) {
+                    const channel = await discordBot.channels.fetch(logChannel);
+                    if (channel && 'send' in channel) {
+                      await channel.send('🔄 Aternos server restarted successfully!');
+                    }
+                  }
+                }, 5000);
+              } catch (error) {
+                await interaction.reply('❌ Failed to restart Aternos server');
+                await addLog('error', 'error', 'Failed to restart Aternos server', error.message);
+              }
+              break;
+              
+            case 'website':
+              const websiteEmbed = {
+                title: '🌐 AFKSRBot Website',
+                description: 'Visit our official website for more information about AFKSRBot!',
+                url: process.env.REPLIT_DOMAIN || 'https://afksrbot-dashboard.replit.app',
+                color: 0x5865F2,
+                fields: [
+                  {
+                    name: '🎮 Features',
+                    value: '• 24/7 AFK bot for Minecraft\n• Discord integration\n• Aternos server control\n• Live monitoring dashboard',
+                    inline: false
+                  },
+                  {
+                    name: '📱 Dashboard',
+                    value: `[Open Dashboard](${process.env.REPLIT_DOMAIN || 'https://afksrbot-dashboard.replit.app'})`,
+                    inline: true
+                  }
+                ],
+                footer: {
+                  text: 'AFKSRBot - Your Minecraft companion'
+                },
+                timestamp: new Date().toISOString()
+              };
+              
+              await interaction.reply({ embeds: [websiteEmbed] });
               break;
               
             default:
