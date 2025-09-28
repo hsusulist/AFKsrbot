@@ -23,8 +23,14 @@ export function useAutosave<T>(
   });
 
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const onSaveRef = useRef(onSave);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // Update the onSave ref when it changes
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
 
   // Auto-save when data changes
   useEffect(() => {
@@ -38,7 +44,7 @@ export function useAutosave<T>(
       try {
         localStorage.setItem(`autosave_${key}`, JSON.stringify(data));
         setLastSaved(new Date());
-        onSave?.(data);
+        onSaveRef.current?.(data);
       } catch (error) {
         console.error('Failed to autosave:', error);
       } finally {
@@ -51,7 +57,7 @@ export function useAutosave<T>(
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [data, key, debounceMs, onSave]);
+  }, [data, key, debounceMs]);
 
   const reset = () => {
     try {
@@ -71,7 +77,7 @@ export function useAutosave<T>(
     try {
       localStorage.setItem(`autosave_${key}`, JSON.stringify(data));
       setLastSaved(new Date());
-      onSave?.(data);
+      onSaveRef.current?.(data);
       setIsLoading(false);
     } catch (error) {
       console.error('Failed to save:', error);
