@@ -798,23 +798,19 @@ export function createRoutes(storage: IStorage) {
     }
   });
 
-  router.post('/api/minecraft/connect', async (req, res) => {
+  // Global variables for connection management
+  let connectionAttempts = 0;
+  let maxRetries = 5;
+  let reconnectTimeout: NodeJS.Timeout | null = null;
+  let isReconnecting = false;
+
+  // Helper function to connect/reconnect to Minecraft server
+  const connectToMinecraftServer = async (config: any, isRetry = false, retryCount = 0): Promise<{ success: boolean; message: string; shouldRetry?: boolean }> => {
     try {
-      const config = insertMinecraftServerConfigSchema.parse(req.body);
-      
-      if (!config.serverIP || !config.serverPort || !config.username) {
-        return res.status(400).json({ error: 'Server IP, port, and username are required' });
-      }
-
-      if (config.password && config.password.length < 4) {
-        return res.status(400).json({ error: 'Password must be at least 4 characters' });
-      }
-
-      // Smart hostname parsing - handle cases like "hostname:port" in serverIP field
+      // Smart hostname parsing
       let serverHost = config.serverIP;
       let serverPort = config.serverPort;
       
-      // If serverIP contains a colon, it might be hostname:port format
       if (serverHost.includes(':')) {
         const parts = serverHost.split(':');
         if (parts.length === 2 && !isNaN(parseInt(parts[1]))) {
@@ -824,80 +820,195 @@ export function createRoutes(storage: IStorage) {
         }
       }
 
-      // First, ping the server to check if it's online
-      await addLog('minecraft', 'info', `🔍 Checking server connectivity before connecting...`);
+      // Check server connectivity with multiple attempts
+      await addLog('minecraft', 'info', `🔍 ${isRetry ? `Retry ${retryCount}:` : ''} Checking server connectivity...`);
       
-      try {
-        const { Socket } = await import('node:net');
-        const socket = new Socket();
-        let isOnline = false;
-        
-        const pingResult = await new Promise((resolve) => {
-          socket.setTimeout(3000);
+      let serverOnline = false;
+      for (let pingAttempt = 0; pingAttempt < 3; pingAttempt++) {
+        try {
+          const { Socket } = await import('node:net');
+          const socket = new Socket();
           
-          socket.on('connect', () => {
-            isOnline = true;
-            socket.destroy();
-            resolve('online');
+          const pingResult = await new Promise((resolve) => {
+            socket.setTimeout(5000); // Increased timeout
+            
+            socket.on('connect', () => {
+              socket.destroy();
+              resolve('online');
+            });
+            
+            socket.on('timeout', () => {
+              socket.destroy();
+              resolve('timeout');
+            });
+            
+            socket.on('error', () => {
+              socket.destroy();
+              resolve('offline');
+            });
+            
+            socket.connect(parseInt(serverPort), serverHost);
           });
           
-          socket.on('timeout', () => {
-            socket.destroy();
-            resolve('timeout');
-          });
-          
-          socket.on('error', () => {
-            socket.destroy();
-            resolve('offline');
-          });
-          
-          socket.connect(parseInt(serverPort), serverHost);
-        });
-        
-        if (!isOnline) {
-          await addLog('minecraft', 'warn', `📴 Server ${serverHost}:${serverPort} appears to be offline or unreachable. If this is an Aternos server, please start it first and try again.`);
-          return res.status(202).json({ 
-            success: false, 
-            message: 'Server appears offline/sleeping. Please start the server and try again.',
-            serverStatus: 'offline'
-          });
+          if (pingResult === 'online') {
+            serverOnline = true;
+            await addLog('minecraft', 'info', `✅ Server ${serverHost}:${serverPort} is online and reachable`);
+            break;
+          } else if (pingAttempt < 2) {
+            await addLog('minecraft', 'warn', `Ping attempt ${pingAttempt + 1} failed (${pingResult}), retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+          }
+        } catch (pingError) {
+          if (pingAttempt < 2) {
+            await addLog('minecraft', 'warn', `Ping attempt ${pingAttempt + 1} error: ${pingError.message}, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
         }
-        
-        await addLog('minecraft', 'info', `✅ Server ${serverHost}:${serverPort} is online and ready for connection`);
-      } catch (pingError) {
-        await addLog('minecraft', 'warn', `Could not verify server status: ${pingError.message}. Proceeding with connection attempt...`);
+      }
+      
+      if (!serverOnline) {
+        const message = `Server ${serverHost}:${serverPort} is offline or unreachable. ${isRetry ? 'Retrying in 30 seconds...' : 'Will retry automatically.'}`;
+        await addLog('minecraft', 'error', `📴 ${message}`);
+        return { 
+          success: false, 
+          message,
+          shouldRetry: true
+        };
       }
 
       // Disconnect existing bot if any
       if (minecraftBot) {
-        minecraftBot.quit();
+        try {
+          minecraftBot.quit();
+        } catch (e) {
+          await addLog('minecraft', 'warn', 'Error disconnecting existing bot: ' + e.message);
+        }
         minecraftBot = null;
       }
 
-      // Create Minecraft bot with cracked/offline mode
+      // Create bot connection
+      await addLog('minecraft', 'info', `🔌 ${isRetry ? `Retry ${retryCount}:` : ''} Connecting to ${serverHost}:${serverPort} as ${config.username}...`);
+      
       const botOptions: any = {
         host: serverHost,
         port: parseInt(serverPort),
         username: config.username,
-        version: config.version,
-        auth: 'offline', // Enable cracked/offline mode
-        hideErrors: false, // Show connection errors for debugging
-        checkTimeoutInterval: 30000, // 30 second timeout
-        keepAlive: true, // Keep connection alive
+        version: config.version || '1.20.1',
+        auth: 'offline',
+        hideErrors: false,
+        checkTimeoutInterval: 30000,
+        keepAlive: true,
       };
 
-      // Add auth if password provided
-      if (config.password) {
-        if (config.shouldRegister) {
-          // Registration logic would depend on server plugin
-          await addLog('minecraft', 'info', `Attempting to register with username: ${config.username}`);
-        }
-        // Password will be used for login after connecting
-      }
+      return new Promise((resolve) => {
+        const bot = mineflayer.createBot(botOptions);
+        let connectionResolved = false;
+        
+        // Connection timeout
+        const connectionTimeout = setTimeout(() => {
+          if (!connectionResolved) {
+            connectionResolved = true;
+            try {
+              bot.quit();
+            } catch (e) {}
+            resolve({
+              success: false,
+              message: `Connection timeout after 30 seconds. Server may be slow or unreachable.`,
+              shouldRetry: true
+            });
+          }
+        }, 30000);
 
-      await addLog('minecraft', 'info', `🔌 Attempting to connect to ${serverHost}:${serverPort} with username ${config.username}`);
+        bot.once('spawn', async () => {
+          if (connectionResolved) return;
+          connectionResolved = true;
+          clearTimeout(connectionTimeout);
+          
+          minecraftBot = bot;
+          connectionAttempts = 0; // Reset attempts on successful connection
+          
+          await addLog('minecraft', 'info', `🎮 Successfully connected to ${serverHost}:${serverPort}!`);
+          await storage.saveMinecraftConfig({ ...config, isConnected: true });
+          
+          // Setup bot event handlers (moved to separate function)
+          setupBotEventHandlers(bot, config);
+          
+          resolve({
+            success: true,
+            message: `Connected successfully to ${serverHost}:${serverPort}!`
+          });
+        });
+
+        bot.once('error', async (error) => {
+          if (connectionResolved) return;
+          connectionResolved = true;
+          clearTimeout(connectionTimeout);
+          
+          let errorMessage = '';
+          let shouldRetry = true;
+          
+          if (error.message.includes('getaddrinfo ENOTFOUND')) {
+            errorMessage = `❌ Server hostname "${serverHost}" not found. Check the server address.`;
+            shouldRetry = false;
+          } else if (error.message.includes('ECONNREFUSED')) {
+            errorMessage = `🚫 Connection refused by ${serverHost}:${serverPort}. Server may be offline or port is wrong.`;
+          } else if (error.message.includes('ETIMEDOUT')) {
+            errorMessage = `⏱️ Connection timed out to ${serverHost}:${serverPort}. Server may be overloaded.`;
+          } else if (error.message.includes('Invalid username')) {
+            errorMessage = `👤 Invalid username "${config.username}". Check username format.`;
+            shouldRetry = false;
+          } else {
+            errorMessage = `🔴 Connection failed: ${error.message}`;
+          }
+          
+          await addLog('minecraft', 'error', errorMessage);
+          
+          resolve({
+            success: false,
+            message: errorMessage,
+            shouldRetry
+          });
+        });
+
+        bot.once('end', async () => {
+          if (connectionResolved) return;
+          connectionResolved = true;
+          clearTimeout(connectionTimeout);
+          
+          await addLog('minecraft', 'warn', 'Connection ended before spawn event');
+          resolve({
+            success: false,
+            message: 'Connection ended unexpectedly before spawning in game.',
+            shouldRetry: true
+          });
+        });
+      });
       
-      minecraftBot = mineflayer.createBot(botOptions);
+    } catch (error) {
+      await addLog('minecraft', 'error', `Connection attempt failed: ${error.message}`);
+      return {
+        success: false,
+        message: `Connection attempt failed: ${error.message}`,
+        shouldRetry: true
+      };
+    }
+  };
+
+  // Function to setup bot event handlers and anti-AFK behavior
+  const setupBotEventHandlers = async (bot: any, config: any) => {
+    // Password handling if provided
+    if (config.password) {
+      if (config.shouldRegister) {
+        await addLog('minecraft', 'info', `Attempting to register with username: ${config.username}`);
+      }
+      // Login with password after spawn
+      setTimeout(() => {
+        if (bot && bot.chat) {
+          bot.chat(`/login ${config.password}`);
+          addLog('minecraft', 'info', `Sent login command for ${config.username}`);
+        }
+      }, 2000);
+    }
 
       // AFKsrbot state variables
       let afkIntervals: NodeJS.Timeout[] = [];
@@ -1702,17 +1813,83 @@ export function createRoutes(storage: IStorage) {
           await addLog('minecraft', 'warn', '🚫 Auto-reconnect disabled due to repeated kicks');
         }
       });
+    }; // End of setupBotEventHandlers function
 
-      res.json({ success: true, message: 'Minecraft bot connection started' });
+  // Main Minecraft Connection Endpoint with Retry Logic
+  router.post('/api/minecraft/connect', async (req, res) => {
+    try {
+      const config = insertMinecraftServerConfigSchema.parse(req.body);
+      
+      if (!config.serverIP || !config.serverPort || !config.username) {
+        return res.status(400).json({ error: 'Server IP, port, and username are required' });
+      }
+
+      if (config.password && config.password.length < 4) {
+        return res.status(400).json({ error: 'Password must be at least 4 characters' });
+      }
+
+      // Save initial configuration
+      await storage.saveMinecraftConfig({ ...config, isConnected: false });
+      
+      // Initial connection attempt
+      await addLog('minecraft', 'info', `🚀 Starting connection to ${config.serverIP}:${config.serverPort}...`);
+      
+      const attemptConnection = async (retryCount = 0): Promise<void> => {
+        const result = await connectToMinecraftServer(config, retryCount > 0, retryCount);
+        
+        if (result.success) {
+          // Connection successful
+          await addLog('minecraft', 'info', `🎮 Successfully connected! ${result.message}`);
+          await storage.updateMinecraftConfig({ ...config, isConnected: true });
+          return;
+        } else if (result.shouldRetry && retryCount < maxRetries) {
+          // Retry connection
+          const delay = Math.min(30000 * Math.pow(2, retryCount), 300000); // Exponential backoff, max 5 minutes
+          await addLog('minecraft', 'warn', `⏳ Retry ${retryCount + 1}/${maxRetries} in ${delay/1000} seconds: ${result.message}`);
+          
+          setTimeout(async () => {
+            try {
+              await attemptConnection(retryCount + 1);
+            } catch (error) {
+              await addLog('minecraft', 'error', `Retry ${retryCount + 1} failed: ${error.message}`);
+            }
+          }, delay);
+        } else {
+          // Max retries reached or shouldn't retry
+          await addLog('minecraft', 'error', `❌ Connection failed after ${retryCount + 1} attempts: ${result.message}`);
+          await storage.updateMinecraftConfig({ ...config, isConnected: false });
+        }
+      };
+
+      // Start the connection process asynchronously
+      attemptConnection().catch(async (error) => {
+        await addLog('minecraft', 'error', `Connection process failed: ${error.message}`);
+      });
+
+      // Immediate response to user
+      res.json({ 
+        success: true, 
+        message: 'Connection process started. Check logs for status updates.',
+        retryEnabled: true,
+        maxRetries 
+      });
       
     } catch (error) {
-      await addLog('minecraft', 'error', `Failed to connect to Minecraft server: ${error.message}`);
-      res.status(500).json({ error: 'Failed to connect to Minecraft server', details: error.message });
+      await addLog('minecraft', 'error', `Failed to start connection: ${error.message}`);
+      res.status(500).json({ error: 'Failed to start connection process', details: error.message });
     }
   });
 
   router.post('/api/minecraft/disconnect', async (req, res) => {
     try {
+      // Clear any pending reconnection attempts
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
+      isReconnecting = false;
+      connectionAttempts = 0;
+      
       if (minecraftBot) {
         minecraftBot.quit();
         minecraftBot = null;
