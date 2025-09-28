@@ -25,11 +25,15 @@ const navigation = [
   { name: "How to Use", href: "/how-to-use", icon: HelpCircle },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+}
+
+export default function Sidebar({ onNavigate }: SidebarProps) {
   const location = useLocation();
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col h-full">
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
@@ -53,6 +57,7 @@ export default function Sidebar() {
             <Link
               key={item.name}
               to={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-smooth",
                 "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
