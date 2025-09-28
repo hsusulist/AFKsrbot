@@ -15,6 +15,7 @@
     "serverIP": "teddysmpp.aternos.me",
     "serverPort": "39018",
     "username": "Afkbot",
+    "password": "bot123",
     "shouldRegister": false,
     "version": "1.20.4",
     "platform": "java",
@@ -24,9 +25,7 @@
     "isConnected": false,
     "ping": "N/A",
     "uptime": "N/A",
-    "playersOnline": "0/0",
-    "lastConnected": "2025-09-28T06:20:13.563Z",
-    "password": "bot123"
+    "playersOnline": "0/0"
   },
   "botStatus": {
     "id": "bot_status",
@@ -190,6 +189,48 @@
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
+    },
+    {
+      "id": "1759048677575ze3qg1rf7",
+      "timestamp": "2025-09-28T08:37:57.575Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🚀 Starting connection to teddysmpp.aternos.me:39018..."
+    },
+    {
+      "id": "1759048677575v8z4bu71a",
+      "timestamp": "2025-09-28T08:37:57.575Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍  Checking server connectivity..."
+    },
+    {
+      "id": "1759048677925nqk1u9fsq",
+      "timestamp": "2025-09-28T08:37:57.925Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759048677925hqquoh67p",
+      "timestamp": "2025-09-28T08:37:57.925Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌  Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "1759048678566me8cmvl03",
+      "timestamp": "2025-09-28T08:37:58.566Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "Connection ended before spawn event"
+    },
+    {
+      "id": "1759048678567kj3bt8fln",
+      "timestamp": "2025-09-28T08:37:58.567Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "⏳ Retry 1/5 in 30 seconds: Connection ended unexpectedly before spawning in game."
     }
   ],
   "inventory": []
