@@ -32,7 +32,7 @@
     "id": "bot_status",
     "discordConnected": false,
     "minecraftConnected": false,
-    "lastActivity": "2025-09-28T05:44:24.033Z",
+    "lastActivity": "2025-09-28T06:05:15.659Z",
     "totalUptime": "0m"
   },
   "consoleCommands": [
@@ -146,15 +146,15 @@
       "message": "✅ Slash commands registered successfully"
     },
     {
-      "id": "1759038264033v2rmjyatr",
-      "timestamp": "2025-09-28T05:44:24.033Z",
+      "id": "1759039515659nw6lbw9k8",
+      "timestamp": "2025-09-28T06:05:15.659Z",
       "type": "minecraft",
       "level": "info",
       "message": "🔄 Auto-reconnecting in 0 seconds..."
     },
     {
-      "id": "1759038264034p2w8gwk7s",
-      "timestamp": "2025-09-28T05:44:24.034Z",
+      "id": "1759039515661hjqmxxsnc",
+      "timestamp": "2025-09-28T06:05:15.661Z",
       "type": "minecraft",
       "level": "info",
       "message": "Attempting to reconnect..."
