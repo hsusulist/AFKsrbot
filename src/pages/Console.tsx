@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAutosave } from "@/hooks/useAutosave";
 import { useQuery } from "@tanstack/react-query";
@@ -28,7 +29,11 @@ import {
   Eye,
   Share2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Bot,
+  Sparkles,
+  ThumbsUp,
+  ThumbsDown
 } from "lucide-react";
 
 interface ConsoleEntry {
@@ -42,6 +47,9 @@ interface ConsoleEntry {
 export default function Console() {
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [aiCopilotEnabled, setAiCopilotEnabled] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -173,8 +181,92 @@ export default function Console() {
     }
   };
 
+  // Request AI assistance function
+  const requestAIAssistance = async (userMessage: string) => {
+    if (!aiCopilotEnabled) return;
+    
+    setIsLoadingAI(true);
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: userMessage,
+          context: {
+            botConnected: isConnected,
+            health: 20,
+            food: 20
+          }
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setAiSuggestion(result.suggestion);
+      } else {
+        toast({
+          title: "AI Assistant Error",
+          description: "Failed to get AI suggestion",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "AI Assistant Error",
+        description: "AI service is not available",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingAI(false);
+    }
+  };
+
+  // Execute AI suggested command
+  const executeAISuggestion = async () => {
+    if (!aiSuggestion) return;
+    
+    try {
+      const response = await fetch('/api/ai/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          command: aiSuggestion.command,
+          intent: aiSuggestion.intent
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "AI Command Executed",
+          description: result.message,
+        });
+        setAiSuggestion(null);
+      } else {
+        toast({
+          title: "Execution Failed",
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to execute AI suggestion",
+        variant: "destructive"
+      });
+    }
+  };
+
   const executeCommand = async () => {
     if (!command.trim()) return;
+    
+    // If AI copilot is enabled, first get AI suggestion for the command
+    if (aiCopilotEnabled && !command.startsWith('/')) {
+      await requestAIAssistance(command);
+    }
     
     const newCommand: ConsoleEntry = {
       id: consoleEntries.length + 1,
@@ -309,6 +401,14 @@ export default function Console() {
             <Badge variant={isConnected ? "default" : "secondary"}>
               {isConnected ? "Connected" : "Disconnected"}
             </Badge>
+            <div className="flex items-center gap-2">
+              <Bot className="w-4 h-4 text-muted-foreground" />
+              <Switch
+                checked={aiCopilotEnabled}
+                onCheckedChange={setAiCopilotEnabled}
+              />
+              <span className="text-sm text-muted-foreground">AI Copilot</span>
+            </div>
             <Button variant="outline" onClick={clearConsole}>
               <Trash2 className="w-4 h-4 mr-2" />
               Clear
@@ -364,6 +464,42 @@ export default function Console() {
               )}
             </div>
           </ScrollArea>
+
+          {/* AI Suggestion Display */}
+          {aiSuggestion && (
+            <div className="border-t border-border p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10">
+              <div className="flex items-start gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  <span className="text-sm font-medium text-purple-400">AI Suggestion</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-foreground mb-2">{aiSuggestion.rationale}</p>
+                  <div className="bg-muted/50 rounded p-2 mb-3">
+                    <code className="text-sm text-accent">{aiSuggestion.command}</code>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={executeAISuggestion}
+                      className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                    >
+                      <ThumbsUp className="w-3 h-3 mr-1" />
+                      Apply & Execute
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setAiSuggestion(null)}
+                    >
+                      <ThumbsDown className="w-3 h-3 mr-1" />
+                      Dismiss
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Command Input */}
           <div className="border-t border-border p-4">

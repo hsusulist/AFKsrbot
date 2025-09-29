@@ -9,16 +9,135 @@ import {
   insertLogEntrySchema 
 } from '../shared/schema';
 
-export function createRoutes(storage: IStorage) {
+export function createRoutes(storage: IStorage, io?: any) {
   const router = express.Router();
   
   // Discord Bot instance with extended properties
   let discordBot: (Client & { statusInterval?: NodeJS.Timeout }) | null = null;
   let minecraftBot: any = null; // mineflayer bot
   
+  // Movement control states
+  let currentMovementStates = {
+    forward: false,
+    back: false,
+    left: false,
+    right: false,
+    jump: false,
+    sneak: false
+  };
+  
   // Global channel tracking for Discord features
   let statusChannel: string | null = null;
   let logChannel: string | null = null;
+  
+  // Socket.IO event listeners for real-time control
+  if (io) {
+    io.on('connection', (socket) => {
+      console.log('🔌 Client connected to Socket.IO:', socket.id);
+      
+      // Handle movement controls
+      socket.on('movement_control', (data) => {
+        const { action, key, pressed } = data;
+        
+        if (action === 'movement' && currentMovementStates.hasOwnProperty(key)) {
+          currentMovementStates[key] = pressed;
+          updateBotMovement();
+          
+          // Emit position updates to all clients
+          if (minecraftBot && minecraftBot.entity) {
+            io.emit('bot_position_update', minecraftBot.entity.position);
+          }
+        }
+      });
+      
+      socket.on('disconnect', () => {
+        console.log('🔌 Client disconnected from Socket.IO:', socket.id);
+        // Reset movement when client disconnects
+        Object.keys(currentMovementStates).forEach(key => {
+          currentMovementStates[key] = false;
+        });
+        updateBotMovement();
+      });
+    });
+    
+    // Periodic position updates during movement
+    setInterval(() => {
+      if (minecraftBot && minecraftBot.entity && Object.values(currentMovementStates).some(state => state)) {
+        io.emit('bot_position_update', minecraftBot.entity.position);
+      }
+    }, 100); // Update position every 100ms when moving
+  }
+  
+  // Function to update bot movement based on current states
+  function updateBotMovement() {
+    if (!minecraftBot) return;
+    
+    try {
+      // Set control states on the bot
+      minecraftBot.setControlState('forward', currentMovementStates.forward);
+      minecraftBot.setControlState('back', currentMovementStates.back);
+      minecraftBot.setControlState('left', currentMovementStates.left);
+      minecraftBot.setControlState('right', currentMovementStates.right);
+      minecraftBot.setControlState('jump', currentMovementStates.jump);
+      minecraftBot.setControlState('sneak', currentMovementStates.sneak);
+      
+      // Emit position updates if there's movement
+      if (io && (currentMovementStates.forward || currentMovementStates.back || 
+                 currentMovementStates.left || currentMovementStates.right ||
+                 currentMovementStates.jump)) {
+        const position = minecraftBot.entity ? minecraftBot.entity.position : null;
+        io.emit('bot_position_update', position);
+      }
+    } catch (error) {
+      console.error('Movement control error:', error);
+    }
+  }
+  
+  // AI Chat Handler with OpenAI integration
+  async function handleAIChatRequest(message: string, context: any) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
+    }
+    
+    try {
+      const OpenAI = await import('openai');
+      const openai = new OpenAI.default({ apiKey: process.env.OPENAI_API_KEY });
+      
+      const systemPrompt = `You are an AI assistant for a Minecraft bot control dashboard. You help users control their Minecraft bot by suggesting commands and actions. 
+      
+      Current bot status: ${context?.botConnected ? 'Connected' : 'Disconnected'}
+      Current health: ${context?.health || 'Unknown'}
+      Current food: ${context?.food || 'Unknown'}
+      
+      When suggesting commands, respond with a JSON object containing:
+      {
+        "intent": "command|movement|inventory|info",
+        "command": "the minecraft command or action to execute",
+        "rationale": "explanation of why this action is recommended",
+        "safe": true/false
+      }
+      
+      Only suggest safe actions that won't harm the bot or server.`;
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // Using a valid OpenAI model
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        response_format: { type: "json_object" },
+      });
+      
+      const aiResponse = JSON.parse(response.choices[0].message.content || '{}');
+      return {
+        success: true,
+        suggestion: aiResponse,
+        originalMessage: message
+      };
+    } catch (error) {
+      throw new Error(`AI processing failed: ${error.message}`);
+    }
+  }
 
   // Helper function to add logs
   const addLog = async (type: 'discord' | 'minecraft' | 'system' | 'error', level: 'info' | 'warn' | 'error' | 'debug', message: string, details?: string) => {
@@ -1709,8 +1828,8 @@ export function createRoutes(storage: IStorage) {
           await addLog('minecraft', 'info', `🔄 Auto-reconnecting in ${delay/1000} seconds...`);
           setTimeout(async () => {
             try {
-              // Recreate bot connection
-              const newBot = mineflayer.createBot(botOptions);
+              // Recreate bot connection using stored config
+              await connectToMinecraftServer(config, true, kickCount);
               // The new bot will have fresh event handlers
             } catch (error) {
               await addLog('minecraft', 'error', `Failed to reconnect: ${error.message}`);
@@ -2045,6 +2164,7 @@ export function createRoutes(storage: IStorage) {
         count: item.count,
         slot: item.slot,
         metadata: item.metadata ? JSON.stringify(item.metadata) : undefined,
+        isFood: isFood(item.name || item.displayName || ''),
       }));
       
       // Save to storage for caching
@@ -2053,6 +2173,268 @@ export function createRoutes(storage: IStorage) {
       res.json(inventory);
     } catch (error) {
       res.status(500).json({ error: 'Failed to get inventory' });
+    }
+  });
+
+  // Helper function to check if item is food
+  function isFood(itemName: string): boolean {
+    const foodItems = [
+      'bread', 'apple', 'pork', 'beef', 'chicken', 'fish', 'salmon', 'cod', 
+      'cookie', 'cake', 'pie', 'stew', 'soup', 'carrot', 'potato', 'beetroot',
+      'melon', 'berries', 'chorus_fruit', 'golden_apple', 'golden_carrot',
+      'cooked_porkchop', 'cooked_beef', 'cooked_chicken', 'cooked_fish',
+      'cooked_salmon', 'cooked_cod', 'baked_potato', 'mushroom_stew',
+      'rabbit_stew', 'beetroot_soup', 'suspicious_stew', 'honey_bottle',
+      'milk_bucket', 'dried_kelp', 'kelp', 'sweet_berries', 'glow_berries'
+    ];
+    
+    const normalizedName = itemName.toLowerCase().replace(/minecraft:|_/g, '');
+    return foodItems.some(food => normalizedName.includes(food.replace(/_/g, '')));
+  }
+
+  // Drop item endpoint
+  router.post('/api/inventory/drop', async (req, res) => {
+    try {
+      if (!minecraftBot || !minecraftBot.inventory) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+
+      const { slot, count } = req.body;
+      
+      if (slot === undefined) {
+        return res.status(400).json({ error: 'Slot is required' });
+      }
+
+      const item = minecraftBot.inventory.slots[slot];
+      if (!item) {
+        return res.status(400).json({ error: 'No item in specified slot' });
+      }
+
+      const dropCount = count || item.count;
+      
+      // Drop the item(s)
+      if (dropCount >= item.count) {
+        await minecraftBot.tossStack(item);
+        await addLog('minecraft', 'info', `Dropped all ${item.count} ${item.name} from slot ${slot}`);
+      } else {
+        await minecraftBot.toss(item.type, null, dropCount);
+        await addLog('minecraft', 'info', `Dropped ${dropCount} ${item.name} from slot ${slot}`);
+      }
+
+      // Emit real-time update
+      if (io) {
+        io.emit('inventory_updated');
+      }
+
+      res.json({ success: true, message: `Dropped ${dropCount} ${item.name}` });
+    } catch (error) {
+      await addLog('minecraft', 'error', `Failed to drop item: ${error.message}`);
+      res.status(500).json({ error: 'Failed to drop item', details: error.message });
+    }
+  });
+
+  // Movement control endpoints
+  router.post('/api/movement/control', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+
+      const { action, key, pressed } = req.body;
+      
+      if (action === 'movement' && key && typeof pressed === 'boolean') {
+        currentMovementStates[key] = pressed;
+        updateBotMovement();
+        
+        // Emit real-time update
+        if (io) {
+          io.emit('bot_movement_update', currentMovementStates);
+        }
+        
+        res.json({ success: true, message: `Movement ${key} ${pressed ? 'started' : 'stopped'}` });
+      } else {
+        res.status(400).json({ error: 'Invalid movement control data' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to control movement', details: error.message });
+    }
+  });
+
+  // AI Copilot endpoints
+  router.post('/api/ai/chat', async (req, res) => {
+    try {
+      const { message, context } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: 'Message is required' });
+      }
+      
+      const response = await handleAIChatRequest(message, context);
+      res.json(response);
+    } catch (error) {
+      console.error('AI Chat Error:', error);
+      res.status(500).json({ error: 'AI chat failed', details: error.message });
+    }
+  });
+
+  router.post('/api/ai/execute', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+
+      const { command, intent } = req.body;
+      
+      if (!command) {
+        return res.status(400).json({ error: 'Command is required' });
+      }
+      
+      // Execute the AI-suggested command
+      try {
+        if (intent === 'command') {
+          minecraftBot.chat(`/${command}`);
+          await addLog('minecraft', 'info', `AI suggested command executed: /${command}`);
+        } else if (intent === 'movement') {
+          // Handle movement commands here
+          await addLog('minecraft', 'info', `AI movement suggestion: ${command}`);
+        }
+        
+        res.json({ success: true, message: `Executed: ${command}` });
+      } catch (execError) {
+        await addLog('minecraft', 'error', `Failed to execute AI command: ${execError.message}`);
+        res.status(500).json({ error: 'Command execution failed', details: execError.message });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to execute AI command', details: error.message });
+    }
+  });
+
+  // Use item endpoint (with food consumption logic)
+  router.post('/api/inventory/use', async (req, res) => {
+    try {
+      if (!minecraftBot || !minecraftBot.inventory) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+
+      const { slot } = req.body;
+      
+      if (slot === undefined) {
+        return res.status(400).json({ error: 'Slot is required' });
+      }
+
+      const item = minecraftBot.inventory.slots[slot];
+      if (!item) {
+        return res.status(400).json({ error: 'No item in specified slot' });
+      }
+
+      const itemName = item.name || item.displayName || 'Unknown';
+      
+      // Check if item is food
+      if (isFood(itemName)) {
+        try {
+          // Equip the food item to hand
+          await minecraftBot.equip(item, 'hand');
+          await addLog('minecraft', 'info', `Equipped ${itemName} to hand`);
+          
+          // Start eating
+          await minecraftBot.activateItem();
+          await addLog('minecraft', 'info', `Started eating ${itemName}`);
+          
+          // Keep eating until food/health is full or item is consumed
+          const eatInterval = setInterval(async () => {
+            try {
+              if (!minecraftBot || minecraftBot.food >= 20 || minecraftBot.health >= 20) {
+                clearInterval(eatInterval);
+                minecraftBot.deactivateItem();
+                await addLog('minecraft', 'info', 'Stopped eating - full or healthy');
+                return;
+              }
+              
+              // Check if we still have the food item
+              const currentItem = minecraftBot.heldItem;
+              if (!currentItem || !isFood(currentItem.name || '')) {
+                clearInterval(eatInterval);
+                await addLog('minecraft', 'info', 'Stopped eating - no food item in hand');
+                return;
+              }
+            } catch (error) {
+              clearInterval(eatInterval);
+              await addLog('minecraft', 'error', `Error during eating: ${error.message}`);
+            }
+          }, 1000);
+          
+          // Auto-stop after 30 seconds to prevent infinite eating
+          setTimeout(() => {
+            clearInterval(eatInterval);
+            if (minecraftBot) {
+              minecraftBot.deactivateItem();
+            }
+          }, 30000);
+          
+        } catch (error) {
+          await addLog('minecraft', 'error', `Failed to eat ${itemName}: ${error.message}`);
+        }
+      } else {
+        // For non-food items, just equip and use
+        try {
+          await minecraftBot.equip(item, 'hand');
+          await minecraftBot.activateItem();
+          await addLog('minecraft', 'info', `Used ${itemName}`);
+          
+          // Deactivate after a short time
+          setTimeout(() => {
+            if (minecraftBot) {
+              minecraftBot.deactivateItem();
+            }
+          }, 2000);
+        } catch (error) {
+          await addLog('minecraft', 'error', `Failed to use ${itemName}: ${error.message}`);
+        }
+      }
+
+      // Emit real-time update
+      if (io) {
+        io.emit('inventory_updated');
+        io.emit('bot_status_updated');
+      }
+
+      res.json({ success: true, message: `Used ${itemName}` });
+    } catch (error) {
+      await addLog('minecraft', 'error', `Failed to use item: ${error.message}`);
+      res.status(500).json({ error: 'Failed to use item', details: error.message });
+    }
+  });
+
+  // Bot viewer endpoint (3D world view)
+  router.get('/api/viewer', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.json({ 
+          connected: false,
+          position: { x: 0, y: 0, z: 0 },
+          yaw: 0,
+          pitch: 0,
+          dimension: 'overworld',
+          health: 0,
+          food: 0
+        });
+      }
+
+      // Return basic viewer info - actual rendering handled by prismarine-viewer
+      const viewerData = {
+        connected: true,
+        position: minecraftBot.entity ? minecraftBot.entity.position : { x: 0, y: 0, z: 0 },
+        yaw: minecraftBot.entity ? minecraftBot.entity.yaw : 0,
+        pitch: minecraftBot.entity ? minecraftBot.entity.pitch : 0,
+        dimension: minecraftBot.dimension || 'overworld',
+        health: minecraftBot.health || 0,
+        food: minecraftBot.food || 0
+      };
+
+      res.json(viewerData);
+    } catch (error) {
+      console.error('Viewer endpoint error:', error);
+      res.status(500).json({ error: 'Failed to get viewer data' });
     }
   });
 

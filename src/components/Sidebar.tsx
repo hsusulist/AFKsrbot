@@ -11,7 +11,8 @@ import {
   Activity,
   Shield,
   HelpCircle,
-  Cloud
+  Cloud,
+  Eye
 } from "lucide-react";
 
 const navigation = [
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Discord Logs", href: "/discord-logs", icon: FileText },
   { name: "Minecraft Logs", href: "/minecraft-logs", icon: Activity },
   { name: "Console", href: "/console", icon: Shield },
+  { name: "Bot View", href: "/bot-view", icon: Eye },
   { name: "Settings", href: "/settings", icon: Settings },
   { name: "How to Use", href: "/how-to-use", icon: HelpCircle },
 ];

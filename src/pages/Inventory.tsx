@@ -49,6 +49,7 @@ interface InventoryItemWithType {
   type: string;
   rarity: string;
   description: string;
+  isFood?: boolean;
 }
 
 const getItemType = (name: string): string => {
@@ -102,6 +103,70 @@ export default function Inventory() {
       toast({
         title: "Refresh Failed",
         description: "Failed to refresh inventory. Bot may not be connected.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDropItem = async (slot: number, count: number) => {
+    try {
+      const response = await fetch('/api/inventory/drop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot, count })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Item Dropped",
+          description: result.message,
+        });
+        refetch(); // Refresh inventory
+      } else {
+        toast({
+          title: "Drop Failed",
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to drop item. Bot may not be connected.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUseItem = async (slot: number) => {
+    try {
+      const response = await fetch('/api/inventory/use', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast({
+          title: "Item Used",
+          description: result.message,
+        });
+        refetch(); // Refresh inventory
+      } else {
+        toast({
+          title: "Use Failed",
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to use item. Bot may not be connected.",
         variant: "destructive"
       });
     }
@@ -225,13 +290,25 @@ export default function Inventory() {
               </div>
               
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => handleDropItem(item.slot, item.count)}
+                  disabled={!item.slot}
+                >
                   <Edit className="w-3 h-3 mr-1" />
                   Drop Item
                 </Button>
-                <Button size="sm" variant="outline" className="text-primary hover:text-primary">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className={`${item.isFood ? 'text-green-400 hover:text-green-300' : 'text-primary hover:text-primary'}`}
+                  onClick={() => handleUseItem(item.slot)}
+                  disabled={!item.slot}
+                >
                   <Trash2 className="w-3 h-3" />
-                  Use Item
+                  {item.isFood ? 'Eat' : 'Use'}
                 </Button>
               </div>
             </Card>

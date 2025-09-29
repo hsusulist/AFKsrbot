@@ -15,6 +15,7 @@ import MinecraftLogs from "./pages/MinecraftLogs";
 import Console from "./pages/Console";
 import Settings from "./pages/Settings";
 import HowToUse from "./pages/HowToUse";
+import BotView from "./pages/BotView";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/discord-logs" element={<DiscordLogs />} />
           <Route path="/minecraft-logs" element={<MinecraftLogs />} />
           <Route path="/console" element={<Console />} />
+          <Route path="/bot-view" element={<BotView />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/how-to-use" element={<HowToUse />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
