@@ -1,6 +1,8 @@
 import express from 'express';
 import { Client, GatewayIntentBits } from 'discord.js';
 import mineflayer from 'mineflayer';
+import { pathfinder, Movements, goals } from 'mineflayer-pathfinder';
+import { plugin as pvp } from 'mineflayer-pvp';
 import { IStorage } from './storage';
 import { 
   insertDiscordBotConfigSchema, 
@@ -16,6 +18,14 @@ export function createRoutes(storage: IStorage, io?: any) {
   let discordBot: (Client & { statusInterval?: NodeJS.Timeout }) | null = null;
   let minecraftBot: any = null; // mineflayer bot
   
+  // Control lock system
+  let controlLock = {
+    owner: null as string | null,
+    ownerId: null as string | null,
+    lastHeartbeat: null as number | null,
+    timeout: 30000 // 30 seconds
+  };
+  
   // Movement control states
   let currentMovementStates = {
     forward: false,
@@ -23,49 +33,335 @@ export function createRoutes(storage: IStorage, io?: any) {
     left: false,
     right: false,
     jump: false,
-    sneak: false
+    sneak: false,
+    sprint: false
   };
+  
+  // Bot control states
+  let isManualControl = false;
+  let pvpEnabled = false;
+  let pvpTarget = null;
+  let botLook = { yaw: 0, pitch: 0 };
+  
+  // Movement timing for natural player behavior
+  let movementStartTime = 0;
+  let movementTickInterval: NodeJS.Timeout | null = null;
+  let controllerSocketId: string | null = null;
   
   // Global channel tracking for Discord features
   let statusChannel: string | null = null;
   let logChannel: string | null = null;
+  
+  // World snapshot for radar view
+  let worldSnapshot = {
+    bot: { pos: { x: 0, y: 0, z: 0 }, yaw: 0, health: 20, food: 20 },
+    entities: [] as any[],
+    lastUpdate: Date.now()
+  };
+  
+  // Control lock functions
+  function isControlLockValid() {
+    if (!controlLock.owner || !controlLock.lastHeartbeat) return false;
+    return Date.now() - controlLock.lastHeartbeat < controlLock.timeout;
+  }
+  
+  function releaseControlLock() {
+    controlLock.owner = null;
+    controlLock.ownerId = null;
+    controlLock.lastHeartbeat = null;
+    isManualControl = false;
+    controllerSocketId = null;
+    
+    // Stop movement tick
+    if (movementTickInterval) {
+      clearInterval(movementTickInterval);
+      movementTickInterval = null;
+    }
+    
+    // Reset all movement states
+    Object.keys(currentMovementStates).forEach(key => {
+      currentMovementStates[key] = false;
+    });
+    updateBotMovement();
+    
+    // Re-enable autonomous behavior if bot is connected
+    if (minecraftBot) {
+      console.log('🤖 Re-enabling autonomous behavior');
+      // Reset any manual overrides
+    }
+    
+    if (io) {
+      io.emit('control_released');
+    }
+  }
+  
+  // Server-authoritative movement tick for smooth player-like movement
+  function startMovementTick() {
+    if (movementTickInterval) {
+      clearInterval(movementTickInterval);
+    }
+    
+    movementTickInterval = setInterval(() => {
+      if (!minecraftBot || !isManualControl) return;
+      
+      try {
+        // Handle sprint logic - auto-sprint when moving forward for >250ms
+        const now = Date.now();
+        if (currentMovementStates.forward && !currentMovementStates.sneak) {
+          if (movementStartTime === 0) {
+            movementStartTime = now;
+          } else if (now - movementStartTime > 250 && !currentMovementStates.sprint) {
+            currentMovementStates.sprint = true;
+          }
+        } else {
+          movementStartTime = 0;
+          currentMovementStates.sprint = false;
+        }
+        
+        // Apply all control states continuously for smooth movement
+        minecraftBot.setControlState('forward', currentMovementStates.forward);
+        minecraftBot.setControlState('back', currentMovementStates.back);
+        minecraftBot.setControlState('left', currentMovementStates.left);
+        minecraftBot.setControlState('right', currentMovementStates.right);
+        minecraftBot.setControlState('jump', currentMovementStates.jump);
+        minecraftBot.setControlState('sneak', currentMovementStates.sneak);
+        minecraftBot.setControlState('sprint', currentMovementStates.sprint);
+        
+      } catch (error) {
+        console.error('Movement tick error:', error);
+      }
+    }, 50); // 20 Hz for smooth movement
+  }
+  
+  function updateWorldSnapshot() {
+    if (!minecraftBot || !minecraftBot.entity) return;
+    
+    try {
+      const entities = [];
+      
+      // Add nearby players
+      for (const [username, player] of Object.entries(minecraftBot.players)) {
+        if ((player as any).entity && username !== minecraftBot.username) {
+          const playerEntity = (player as any).entity;
+          entities.push({
+            id: username,
+            type: 'player',
+            kind: 'player',
+            username: username,
+            health: playerEntity.metadata?.[8] || 20,
+            pos: playerEntity.position
+          });
+        }
+      }
+      
+      // Add nearby entities (mobs, items)
+      for (const [id, entity] of Object.entries(minecraftBot.entities)) {
+        const ent = entity as any;
+        if (ent.position && ent.name && ent.name !== minecraftBot.username) {
+          entities.push({
+            id: id,
+            type: ent.type || 'unknown',
+            kind: ent.name,
+            username: ent.name,
+            health: ent.metadata?.[8] || ent.health || 0,
+            pos: ent.position
+          });
+        }
+      }
+      
+      worldSnapshot = {
+        bot: {
+          pos: minecraftBot.entity.position,
+          yaw: minecraftBot.entity.yaw,
+          health: minecraftBot.health,
+          food: minecraftBot.food
+        },
+        entities: entities.slice(0, 50), // Limit to 50 entities for performance
+        lastUpdate: Date.now()
+      };
+      
+      // Emit to all connected clients (marked as volatile for performance)
+      if (io) {
+        io.volatile.emit('world_snapshot', worldSnapshot);
+      }
+    } catch (error) {
+      console.error('World snapshot error:', error);
+    }
+  }
   
   // Socket.IO event listeners for real-time control
   if (io) {
     io.on('connection', (socket) => {
       console.log('🔌 Client connected to Socket.IO:', socket.id);
       
-      // Handle movement controls
+      // Send current world snapshot on connection
+      socket.emit('world_snapshot', worldSnapshot);
+      socket.emit('control_status', {
+        locked: isControlLockValid(),
+        owner: controlLock.owner,
+        manual: isManualControl
+      });
+      
+      // Handle control requests
+      socket.on('control_request', (data) => {
+        const { clientId } = data;
+        
+        if (isControlLockValid() && controlLock.ownerId !== socket.id) {
+          socket.emit('control_denied', { reason: 'Control locked by another user' });
+          return;
+        }
+        
+        controlLock.owner = clientId || socket.id;
+        controlLock.ownerId = socket.id;
+        controlLock.lastHeartbeat = Date.now();
+        isManualControl = true;
+        controllerSocketId = socket.id;
+        
+        // Disable autonomous behaviors for clean manual control
+        if (minecraftBot) {
+          try {
+            // Clear any existing pathfinder goals
+            if ((minecraftBot as any).pathfinder) {
+              (minecraftBot as any).pathfinder.setGoal(null);
+            }
+            // Stop any PvP activity
+            if ((minecraftBot as any).pvp) {
+              (minecraftBot as any).pvp.stop();
+            }
+            // Clear existing control states
+            Object.keys(currentMovementStates).forEach(key => {
+              minecraftBot.setControlState(key, false);
+            });
+            console.log('🎮 Disabled autonomous behaviors for manual control');
+          } catch (error) {
+            console.error('Error disabling autonomous behaviors:', error);
+          }
+        }
+        
+        // Start smooth movement tick
+        startMovementTick();
+        
+        socket.emit('control_granted');
+        socket.broadcast.emit('control_status', {
+          locked: true,
+          owner: controlLock.owner,
+          manual: isManualControl
+        });
+        
+        console.log(`🎮 Control granted to ${controlLock.owner}`);
+      });
+      
+      // Handle control heartbeats
+      socket.on('control_heartbeat', () => {
+        if (controlLock.ownerId === socket.id) {
+          controlLock.lastHeartbeat = Date.now();
+        }
+      });
+      
+      // Handle control release
+      socket.on('control_release', () => {
+        if (controlLock.ownerId === socket.id) {
+          console.log(`🎮 Control released by ${controlLock.owner}`);
+          releaseControlLock();
+        }
+      });
+      
+      // Handle keys state updates for smooth movement (20Hz from client)
+      socket.on('keys_state', (data) => {
+        if (!isControlLockValid() || controlLock.ownerId !== socket.id) {
+          socket.emit('control_denied', { reason: 'No control lock' });
+          return;
+        }
+        
+        // Update movement states - server tick will apply them continuously
+        const { forward, back, left, right, jump, sneak } = data;
+        
+        if (typeof forward === 'boolean') currentMovementStates.forward = forward;
+        if (typeof back === 'boolean') currentMovementStates.back = back;
+        if (typeof left === 'boolean') currentMovementStates.left = left;
+        if (typeof right === 'boolean') currentMovementStates.right = right;
+        if (typeof jump === 'boolean') currentMovementStates.jump = jump;
+        if (typeof sneak === 'boolean') currentMovementStates.sneak = sneak;
+        
+        // Movement tick will handle the actual bot control state updates
+      });
+      
+      // Legacy movement_control support (for compatibility)
       socket.on('movement_control', (data) => {
+        if (!isControlLockValid() || controlLock.ownerId !== socket.id) {
+          socket.emit('control_denied', { reason: 'No control lock' });
+          return;
+        }
+        
         const { action, key, pressed } = data;
         
         if (action === 'movement' && currentMovementStates.hasOwnProperty(key)) {
           currentMovementStates[key] = pressed;
-          updateBotMovement();
-          
-          // Emit position updates to all clients
-          if (minecraftBot && minecraftBot.entity) {
-            io.emit('bot_position_update', minecraftBot.entity.position);
-          }
         }
       });
       
-      socket.on('disconnect', () => {
-        console.log('🔌 Client disconnected from Socket.IO:', socket.id);
-        // Reset movement when client disconnects
+      // Handle look controls
+      socket.on('look_delta', (data) => {
+        if (!isControlLockValid() || controlLock.ownerId !== socket.id || !minecraftBot) {
+          return;
+        }
+        
+        const { deltaYaw, deltaPitch } = data;
+        botLook.yaw += deltaYaw;
+        botLook.pitch += deltaPitch;
+        
+        // Clamp pitch
+        botLook.pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, botLook.pitch));
+        
+        try {
+          minecraftBot.look(botLook.yaw, botLook.pitch);
+        } catch (error) {
+          console.error('Look control error:', error);
+        }
+      });
+      
+      // Handle stop all movement
+      socket.on('stop_all', () => {
+        if (!isControlLockValid() || controlLock.ownerId !== socket.id) {
+          return;
+        }
+        
         Object.keys(currentMovementStates).forEach(key => {
           currentMovementStates[key] = false;
         });
         updateBotMovement();
       });
+      
+      socket.on('disconnect', () => {
+        console.log('🔌 Client disconnected from Socket.IO:', socket.id);
+        
+        // Release control if this client had it
+        if (controlLock.ownerId === socket.id) {
+          console.log(`🎮 Control auto-released due to disconnect`);
+          releaseControlLock();
+        }
+      });
     });
     
-    // Periodic position updates during movement
+    // Periodic position updates during movement (optimized)
     setInterval(() => {
       if (minecraftBot && minecraftBot.entity && Object.values(currentMovementStates).some(state => state)) {
-        io.emit('bot_position_update', minecraftBot.entity.position);
+        io.volatile.emit('bot_position_update', minecraftBot.entity.position);
       }
-    }, 100); // Update position every 100ms when moving
+    }, 200); // Reduced to 5 Hz, marked as volatile
+    
+    // Periodic world snapshot updates (optimized to 5 Hz)
+    setInterval(() => {
+      updateWorldSnapshot();
+    }, 200); // 5 times per second for better performance
+    
+    // Check control lock timeouts
+    setInterval(() => {
+      if (controlLock.owner && !isControlLockValid()) {
+        console.log('🎮 Control lock expired, releasing');
+        releaseControlLock();
+      }
+    }, 5000); // Check every 5 seconds
   }
   
   // Function to update bot movement based on current states
@@ -2456,6 +2752,284 @@ export function createRoutes(storage: IStorage, io?: any) {
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to get bot status' });
+    }
+  });
+
+  // Control endpoints
+  router.post('/api/control/enable', async (req, res) => {
+    try {
+      const { clientId } = req.body;
+      
+      if (isControlLockValid()) {
+        return res.status(409).json({ 
+          error: 'Control already locked', 
+          owner: controlLock.owner 
+        });
+      }
+      
+      controlLock.owner = clientId || 'web-user';
+      controlLock.ownerId = clientId || 'web-user';
+      controlLock.lastHeartbeat = Date.now();
+      isManualControl = true;
+      
+      res.json({ 
+        success: true, 
+        message: 'Control granted',
+        owner: controlLock.owner 
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to enable control' });
+    }
+  });
+
+  router.post('/api/control/release', async (req, res) => {
+    try {
+      releaseControlLock();
+      res.json({ success: true, message: 'Control released' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to release control' });
+    }
+  });
+
+  router.post('/api/control/stop', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+      
+      Object.keys(currentMovementStates).forEach(key => {
+        currentMovementStates[key] = false;
+      });
+      updateBotMovement();
+      
+      res.json({ success: true, message: 'All movement stopped' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to stop movement' });
+    }
+  });
+
+  router.post('/api/look', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+      
+      const { yaw, pitch } = req.body;
+      
+      if (yaw !== undefined) botLook.yaw = yaw;
+      if (pitch !== undefined) {
+        botLook.pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+      }
+      
+      await minecraftBot.look(botLook.yaw, botLook.pitch);
+      res.json({ success: true, yaw: botLook.yaw, pitch: botLook.pitch });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to control look direction' });
+    }
+  });
+
+  // Enhanced inventory management
+  router.get('/api/inventory/refresh', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+      
+      const inventory = minecraftBot.inventory.slots.map((item, index) => {
+        if (!item) return null;
+        return {
+          slot: index,
+          type: item.type,
+          name: item.name,
+          displayName: item.displayName,
+          count: item.count,
+          metadata: item.metadata,
+          enchants: item.enchants,
+          durability: item.durabilityUsed !== undefined ? 
+            item.maxDurability - item.durabilityUsed : null,
+          maxDurability: item.maxDurability || null
+        };
+      });
+      
+      res.json({ inventory, hotbar: inventory.slice(36, 45) });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to refresh inventory' });
+    }
+  });
+
+  router.post('/api/inventory/hotbar', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+      
+      const { slot } = req.body;
+      
+      if (slot < 0 || slot > 8) {
+        return res.status(400).json({ error: 'Invalid hotbar slot (0-8)' });
+      }
+      
+      minecraftBot.setQuickBarSlot(slot);
+      await addLog('minecraft', 'info', `Selected hotbar slot ${slot}`);
+      
+      if (io) io.emit('inventory_updated');
+      
+      res.json({ success: true, selectedSlot: slot });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to change hotbar slot' });
+    }
+  });
+
+  router.post('/api/inventory/equip', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+      
+      const { slot, destination = 'hand' } = req.body;
+      const item = minecraftBot.inventory.slots[slot];
+      
+      if (!item) {
+        return res.status(400).json({ error: 'No item in specified slot' });
+      }
+      
+      await minecraftBot.equip(item, destination);
+      await addLog('minecraft', 'info', `Equipped ${item.name} to ${destination}`);
+      
+      if (io) io.emit('inventory_updated');
+      
+      res.json({ success: true, equipped: item.name, destination });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to equip item' });
+    }
+  });
+
+  router.post('/api/inventory/unequip', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+      
+      const { destination = 'hand' } = req.body;
+      await minecraftBot.unequip(destination);
+      await addLog('minecraft', 'info', `Unequipped ${destination}`);
+      
+      if (io) io.emit('inventory_updated');
+      
+      res.json({ success: true, message: `Unequipped ${destination}` });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to unequip item' });
+    }
+  });
+
+  // PvP system endpoints
+  router.post('/api/pvp/enable', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+      
+      pvpEnabled = true;
+      await addLog('minecraft', 'info', 'PvP mode enabled');
+      
+      if (io) {
+        io.emit('pvp_status', { enabled: pvpEnabled, target: pvpTarget });
+      }
+      
+      res.json({ success: true, enabled: pvpEnabled });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to enable PvP' });
+    }
+  });
+
+  router.post('/api/pvp/disable', async (req, res) => {
+    try {
+      pvpEnabled = false;
+      pvpTarget = null;
+      
+      if (minecraftBot && (minecraftBot as any).pvp) {
+        (minecraftBot as any).pvp.stop();
+      }
+      
+      await addLog('minecraft', 'info', 'PvP mode disabled');
+      
+      if (io) {
+        io.emit('pvp_status', { enabled: pvpEnabled, target: pvpTarget });
+      }
+      
+      res.json({ success: true, enabled: pvpEnabled });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to disable PvP' });
+    }
+  });
+
+  router.post('/api/pvp/target', async (req, res) => {
+    try {
+      if (!minecraftBot) {
+        return res.status(400).json({ error: 'Bot not connected' });
+      }
+      
+      const { username } = req.body;
+      
+      if (!username) {
+        pvpTarget = null;
+        res.json({ success: true, target: null, message: 'Target cleared' });
+        return;
+      }
+      
+      const targetEntity = Object.values(minecraftBot.entities).find(
+        (entity: any) => entity.username === username
+      );
+      
+      if (!targetEntity) {
+        return res.status(404).json({ error: 'Target player not found' });
+      }
+      
+      pvpTarget = username;
+      await addLog('minecraft', 'info', `PvP target set to ${username}`);
+      
+      if (pvpEnabled && (minecraftBot as any).pvp) {
+        (minecraftBot as any).pvp.attack(targetEntity);
+      }
+      
+      if (io) {
+        io.emit('pvp_status', { enabled: pvpEnabled, target: pvpTarget });
+      }
+      
+      res.json({ success: true, target: pvpTarget });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to set PvP target' });
+    }
+  });
+
+  router.get('/api/pvp/status', async (req, res) => {
+    try {
+      const nearbyPlayers = [];
+      
+      if (minecraftBot) {
+        for (const [username, player] of Object.entries(minecraftBot.players)) {
+          if ((player as any).entity && username !== minecraftBot.username) {
+            const entity = (player as any).entity;
+            const distance = minecraftBot.entity ? 
+              minecraftBot.entity.position.distanceTo(entity.position) : 0;
+            
+            nearbyPlayers.push({
+              username,
+              distance: distance.toFixed(1),
+              health: entity.metadata?.[8] || 20,
+              position: entity.position
+            });
+          }
+        }
+      }
+      
+      res.json({
+        enabled: pvpEnabled,
+        target: pvpTarget,
+        nearbyPlayers: nearbyPlayers.slice(0, 10) // Limit to 10 for performance
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get PvP status' });
     }
   });
 

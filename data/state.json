@@ -82,6 +82,14 @@
       "response": "Command executed: /log bot1234",
       "success": true,
       "requiresOp": true
+    },
+    {
+      "id": "1759125006200",
+      "timestamp": "2025-09-29T05:50:06.200Z",
+      "command": "hi",
+      "response": "Message sent: hi",
+      "success": true,
+      "requiresOp": false
     }
   ],
   "logs": [
@@ -231,7 +239,463 @@
       "type": "minecraft",
       "level": "warn",
       "message": "⏳ Retry 1/5 in 30 seconds: Connection ended unexpectedly before spawning in game."
+    },
+    {
+      "id": "1759124832230sb4jggu2b",
+      "timestamp": "2025-09-29T05:47:12.230Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🚀 Starting connection to teddysmpp.aternos.me:39018..."
+    },
+    {
+      "id": "1759124832230ph0lfdsqc",
+      "timestamp": "2025-09-29T05:47:12.230Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍  Checking server connectivity..."
+    },
+    {
+      "id": "17591248324648sngplnhs",
+      "timestamp": "2025-09-29T05:47:12.464Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759124832464ipivx6adq",
+      "timestamp": "2025-09-29T05:47:12.464Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌  Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "17591248340267mutry7fh",
+      "timestamp": "2025-09-29T05:47:14.026Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🎮 Successfully connected to teddysmpp.aternos.me:39018!"
+    },
+    {
+      "id": "1759124834027nt5qv6ugd",
+      "timestamp": "2025-09-29T05:47:14.027Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🎮 Successfully connected! Connected successfully to teddysmpp.aternos.me:39018!"
+    },
+    {
+      "id": "17591248359157kg36d4n0",
+      "timestamp": "2025-09-29T05:47:15.915Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 §d§4§b§4§k§2§0§l left the server"
+    },
+    {
+      "id": "1759124835915c8mkfou3n",
+      "timestamp": "2025-09-29T05:47:15.915Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 §d§8§0§f§c§a§k§f left the server"
+    },
+    {
+      "id": "1759124835977tzz3z28al",
+      "timestamp": "2025-09-29T05:47:15.977Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Please, login with the command: /login <password>"
+    },
+    {
+      "id": "1759124836028ucr0658z0",
+      "timestamp": "2025-09-29T05:47:16.028Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Sent login command for Afkbot"
+    },
+    {
+      "id": "175912483618005fbbzye8",
+      "timestamp": "2025-09-29T05:47:16.180Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Successful login!"
+    },
+    {
+      "id": "1759124836235dsi9i07d3",
+      "timestamp": "2025-09-29T05:47:16.235Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Welcome Afkbot on Your Minecraft Server server"
+    },
+    {
+      "id": "1759124836235kvb87gjng",
+      "timestamp": "2025-09-29T05:47:16.235Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 This server uses AuthMeReloaded protection!"
+    },
+    {
+      "id": "1759124992833b3e86631s",
+      "timestamp": "2025-09-29T05:49:52.833Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🚀 Starting connection to teddysmpp.aternos.me:39018..."
+    },
+    {
+      "id": "1759124992834hz9ncut0u",
+      "timestamp": "2025-09-29T05:49:52.834Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍  Checking server connectivity..."
+    },
+    {
+      "id": "17591249930832qwhe8hks",
+      "timestamp": "2025-09-29T05:49:53.083Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759124993083xk5tb0y1m",
+      "timestamp": "2025-09-29T05:49:53.083Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌  Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "1759124994368cn1wj5x3x",
+      "timestamp": "2025-09-29T05:49:54.368Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🎮 Successfully connected to teddysmpp.aternos.me:39018!"
+    },
+    {
+      "id": "1759124994370oov8nijor",
+      "timestamp": "2025-09-29T05:49:54.370Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🎮 Successfully connected! Connected successfully to teddysmpp.aternos.me:39018!"
+    },
+    {
+      "id": "1759124996198z0xwrlm3y",
+      "timestamp": "2025-09-29T05:49:56.198Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 §d§4§b§4§k§2§0§l left the server"
+    },
+    {
+      "id": "17591249961983ozxv878n",
+      "timestamp": "2025-09-29T05:49:56.198Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 §d§8§0§f§c§a§k§f left the server"
+    },
+    {
+      "id": "1759124996283o1d3s92fs",
+      "timestamp": "2025-09-29T05:49:56.283Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Please, login with the command: /login <password>"
+    },
+    {
+      "id": "1759124996371lqnkgm5e9",
+      "timestamp": "2025-09-29T05:49:56.371Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Sent login command for Afkbot"
+    },
+    {
+      "id": "1759124996525jj8palb48",
+      "timestamp": "2025-09-29T05:49:56.525Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Successful login!"
+    },
+    {
+      "id": "1759124996580e94iqpbj8",
+      "timestamp": "2025-09-29T05:49:56.580Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Welcome Afkbot on Your Minecraft Server server"
+    },
+    {
+      "id": "1759124996581zimn0tx39",
+      "timestamp": "2025-09-29T05:49:56.581Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 This server uses AuthMeReloaded protection!"
+    },
+    {
+      "id": "1759125006200rq76ywlsq",
+      "timestamp": "2025-09-29T05:50:06.200Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "Chat message sent: hi"
+    },
+    {
+      "id": "1759125006321jow5y9eqk",
+      "timestamp": "2025-09-29T05:50:06.321Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 hi"
+    },
+    {
+      "id": "1759125080938qcnqgz45f",
+      "timestamp": "2025-09-29T05:51:20.938Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Jahif1 joined the game"
+    },
+    {
+      "id": "17591250809389kpqrpza7",
+      "timestamp": "2025-09-29T05:51:20.938Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 Jahif1 joined the server"
+    },
+    {
+      "id": "1759125083429gj8e6ece9",
+      "timestamp": "2025-09-29T05:51:23.429Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 MRPING65 joined the game"
+    },
+    {
+      "id": "17591250834293in3y4ady",
+      "timestamp": "2025-09-29T05:51:23.429Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 MRPING65 joined the server"
+    },
+    {
+      "id": "1759125083554w2zkzi277",
+      "timestamp": "2025-09-29T05:51:23.554Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Welcome [Member]MRPING65 to the server!"
+    },
+    {
+      "id": "1759125083562yhgd2q2f4",
+      "timestamp": "2025-09-29T05:51:23.562Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 MRPING65 has made the advancement [Getting an Upgrade]"
+    },
+    {
+      "id": "1759125093990g8oy50g5s",
+      "timestamp": "2025-09-29T05:51:33.990Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 Jahif1 left the server"
+    },
+    {
+      "id": "1759125093991fhl7mipe6",
+      "timestamp": "2025-09-29T05:51:33.991Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Jahif1 left the game"
+    },
+    {
+      "id": "1759125099266xaagriv3w",
+      "timestamp": "2025-09-29T05:51:39.266Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Jahif1 joined the game"
+    },
+    {
+      "id": "1759125099266tjgc561kw",
+      "timestamp": "2025-09-29T05:51:39.266Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 Jahif1 joined the server"
+    },
+    {
+      "id": "17591251094390yz5yxwgr",
+      "timestamp": "2025-09-29T05:51:49.439Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 Jahif1 left the server"
+    },
+    {
+      "id": "1759125109439m13mydfve",
+      "timestamp": "2025-09-29T05:51:49.439Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 Jahif1 left the game"
+    },
+    {
+      "id": "1759125124889xivt0yidy",
+      "timestamp": "2025-09-29T05:52:04.889Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 demon killer is at 18 hearts"
+    },
+    {
+      "id": "1759125164554txw2wweb0",
+      "timestamp": "2025-09-29T05:52:44.554Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔴 hsusulist left the server"
+    },
+    {
+      "id": "17591251645554uneb62w2",
+      "timestamp": "2025-09-29T05:52:44.555Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 hsusulist left the game"
+    },
+    {
+      "id": "1759125177734qm4i6enbv",
+      "timestamp": "2025-09-29T05:52:57.734Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 hsusulist joined the game"
+    },
+    {
+      "id": "1759125177734r9z8uzhfq",
+      "timestamp": "2025-09-29T05:52:57.734Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🟢 hsusulist joined the server"
+    },
+    {
+      "id": "1759125194338tlqwdabb5",
+      "timestamp": "2025-09-29T05:53:14.338Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 who are u"
+    },
+    {
+      "id": "1759125205057i7s538234",
+      "timestamp": "2025-09-29T05:53:25.057Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💬 MRPING65"
+    },
+    {
+      "id": "17591253264543fwsga1fz",
+      "timestamp": "2025-09-29T05:55:26.454Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🚀 Starting connection to teddysmpp.aternos.me:39018..."
+    },
+    {
+      "id": "1759125326455l6dzzex8m",
+      "timestamp": "2025-09-29T05:55:26.455Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍  Checking server connectivity..."
+    },
+    {
+      "id": "1759125326701nfbh4ugby",
+      "timestamp": "2025-09-29T05:55:26.701Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759125326701tlex4g22l",
+      "timestamp": "2025-09-29T05:55:26.701Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌  Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "1759125356815h5cgc4rji",
+      "timestamp": "2025-09-29T05:55:56.815Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "⏳ Retry 1/5 in 30 seconds: Connection timeout after 30 seconds. Server may be slow or unreachable."
+    },
+    {
+      "id": "1759125386816fq4sf214d",
+      "timestamp": "2025-09-29T05:56:26.816Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍 Retry 1: Checking server connectivity..."
+    },
+    {
+      "id": "1759125387040sz2yo6tb5",
+      "timestamp": "2025-09-29T05:56:27.040Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759125387040h8z2gt6yk",
+      "timestamp": "2025-09-29T05:56:27.040Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌 Retry 1: Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "1759125404901l8o7dd0fx",
+      "timestamp": "2025-09-29T05:56:44.901Z",
+      "type": "minecraft",
+      "level": "error",
+      "message": "🔴 Connection failed: read ECONNRESET"
+    },
+    {
+      "id": "1759125404901t4qd6stx5",
+      "timestamp": "2025-09-29T05:56:44.901Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "⏳ Retry 2/5 in 60 seconds: 🔴 Connection failed: read ECONNRESET"
+    },
+    {
+      "id": "1759125464901rpk12urty",
+      "timestamp": "2025-09-29T05:57:44.901Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍 Retry 2: Checking server connectivity..."
+    },
+    {
+      "id": "1759125465131v5z3la98c",
+      "timestamp": "2025-09-29T05:57:45.131Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759125465131thzgagn4m",
+      "timestamp": "2025-09-29T05:57:45.131Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌 Retry 2: Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "1759125489206jtooijeft",
+      "timestamp": "2025-09-29T05:58:09.206Z",
+      "type": "minecraft",
+      "level": "error",
+      "message": "🔴 Connection failed: read ECONNRESET"
+    },
+    {
+      "id": "1759125489206ta9trrl2a",
+      "timestamp": "2025-09-29T05:58:09.206Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "⏳ Retry 3/5 in 120 seconds: 🔴 Connection failed: read ECONNRESET"
     }
   ],
-  "inventory": []
+  "inventory": [
+    {
+      "id": "819_0",
+      "name": "stone_sword",
+      "count": 1,
+      "slot": 36,
+      "isFood": false
+    },
+    {
+      "id": "820_1",
+      "name": "stone_shovel",
+      "count": 1,
+      "slot": 37,
+      "isFood": false
+    },
+    {
+      "id": "821_2",
+      "name": "stone_pickaxe",
+      "count": 1,
+      "slot": 38,
+      "isFood": false
+    }
+  ]
 }
