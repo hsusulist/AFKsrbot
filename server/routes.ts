@@ -147,14 +147,29 @@ export function createRoutes(storage: IStorage, io?: any) {
         }
       };
       
-      const onGoalFailed = () => {
-        cleanupGotoSession(sessionId);
-        addLog('minecraft', 'warn', `❌ Failed to reach ${targetPlayerName}`);
+      const onGoalReset = () => {
+        const session = activeGotoSessions.get(sessionId);
+        // Only treat as failure if session is still in 'traveling' state
+        // If it's 'awaiting_reply' or completed, this is a normal reset after success
+        if (session && session.state === 'traveling') {
+          cleanupGotoSession(sessionId);
+          addLog('minecraft', 'warn', `❌ Failed to reach ${targetPlayerName} - goal reset`);
+        }
       };
       
-      // Use pathfinder events, not bot events, and use 'once' for single-use listeners
+      // Path update handler to detect failures (noPath, timeout, etc.)
+      const onPathUpdate = (results: any) => {
+        if (results.status === 'noPath' || results.status === 'timeout') {
+          cleanupGotoSession(sessionId);
+          addLog('minecraft', 'warn', `❌ Failed to reach ${targetPlayerName} - ${results.status}`);
+          pathfinder.off('path_update', onPathUpdate); // Remove listener after firing
+        }
+      };
+      
+      // Use pathfinder events with proper failure handling
       pathfinder.once('goal_reached', onGoalReached);
-      pathfinder.once('goal_failed', onGoalFailed);
+      pathfinder.once('goal_reset', onGoalReset); // Goal cleared (may be after success)
+      pathfinder.on('path_update', onPathUpdate); // Detect pathfinding failures
       
       return { success: true, message: `Moving to ${targetPlayerName}...` };
       
