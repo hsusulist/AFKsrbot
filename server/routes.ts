@@ -1,7 +1,7 @@
 import express from 'express';
 import { Client, GatewayIntentBits } from 'discord.js';
 import mineflayer from 'mineflayer';
-import { pathfinder, Movements, goals } from 'mineflayer-pathfinder';
+import { pathfinder, Movements } from 'mineflayer-pathfinder';
 import { plugin as pvp } from 'mineflayer-pvp';
 import { IStorage } from './storage';
 import { 
@@ -51,6 +51,118 @@ export function createRoutes(storage: IStorage, io?: any) {
   // Global channel tracking for Discord features
   let statusChannel: string | null = null;
   let logChannel: string | null = null;
+  
+  // Goto session management
+  interface GotoSession {
+    targetPlayer: string;
+    initiator: string;
+    state: 'traveling' | 'awaiting_reply' | 'completed';
+    startTime: number;
+    timeoutId?: NodeJS.Timeout;
+  }
+  
+  const activeGotoSessions = new Map<string, GotoSession>();
+  
+  // Helper functions for goto sessions
+  function cleanupGotoSession(sessionId: string) {
+    const session = activeGotoSessions.get(sessionId);
+    if (session?.timeoutId) {
+      clearTimeout(session.timeoutId);
+    }
+    activeGotoSessions.delete(sessionId);
+  }
+  
+  function createGotoSession(targetPlayer: string, initiator: string): string {
+    const sessionId = `${initiator}_${targetPlayer}_${Date.now()}`;
+    const session: GotoSession = {
+      targetPlayer,
+      initiator,
+      state: 'traveling',
+      startTime: Date.now(),
+    };
+    
+    // Auto-cleanup after 5 minutes
+    session.timeoutId = setTimeout(() => {
+      cleanupGotoSession(sessionId);
+    }, 5 * 60 * 1000);
+    
+    activeGotoSessions.set(sessionId, session);
+    return sessionId;
+  }
+  
+  // Goto command implementation
+  async function handleGotoCommand(targetPlayerName: string, initiator: string): Promise<{success: boolean, message: string}> {
+    if (!minecraftBot) {
+      return { success: false, message: 'Bot not connected to Minecraft server' };
+    }
+    
+    if (isManualControl) {
+      return { success: false, message: 'Cannot use goto while manual control is active' };
+    }
+    
+    // Check if target player exists
+    const targetPlayer = minecraftBot.players[targetPlayerName];
+    if (!targetPlayer || !targetPlayer.entity) {
+      return { success: false, message: `Player ${targetPlayerName} not found or not online` };
+    }
+    
+    // Create goto session
+    const sessionId = createGotoSession(targetPlayerName, initiator);
+    
+    try {
+      // Clear any existing movement states
+      minecraftBot.clearControlStates();
+      
+      // Use pathfinder to go to the player
+      const { pathfinder } = minecraftBot;
+      const targetPos = targetPlayer.entity.position;
+      
+      // Dynamically import goals for ES module compatibility
+      const { goals } = await import('mineflayer-pathfinder');
+      // Set goal to be near the player (within 2 blocks)
+      const goal = new goals.GoalNear(targetPos.x, targetPos.y, targetPos.z, 2);
+      pathfinder.setGoal(goal);
+      
+      await addLog('minecraft', 'info', `🎯 Started goto command: Moving to ${targetPlayerName}`);
+      
+      // Listen for goal reached - events are emitted on pathfinder, not bot
+      const onGoalReached = () => {
+        const session = activeGotoSessions.get(sessionId);
+        if (session && session.state === 'traveling') {
+          // 5% chance to initiate conversation
+          if (Math.random() < 0.05) {
+            session.state = 'awaiting_reply';
+            minecraftBot.chat(`hey ${targetPlayerName} do you love the server`);
+            addLog('minecraft', 'info', `💬 Initiated conversation with ${targetPlayerName}`);
+            
+            // Set timeout for response (30 seconds)
+            session.timeoutId = setTimeout(() => {
+              cleanupGotoSession(sessionId);
+            }, 30000);
+          } else {
+            // Just reached player, no conversation
+            cleanupGotoSession(sessionId);
+            addLog('minecraft', 'info', `✅ Reached ${targetPlayerName} silently`);
+          }
+        }
+      };
+      
+      const onGoalFailed = () => {
+        cleanupGotoSession(sessionId);
+        addLog('minecraft', 'warn', `❌ Failed to reach ${targetPlayerName}`);
+      };
+      
+      // Use pathfinder events, not bot events, and use 'once' for single-use listeners
+      pathfinder.once('goal_reached', onGoalReached);
+      pathfinder.once('goal_failed', onGoalFailed);
+      
+      return { success: true, message: `Moving to ${targetPlayerName}...` };
+      
+    } catch (error) {
+      cleanupGotoSession(sessionId);
+      return { success: false, message: `Failed to move to ${targetPlayerName}: ${error.message}` };
+    }
+  }
   
   // World snapshot for radar view
   let worldSnapshot = {
@@ -1743,6 +1855,33 @@ export function createRoutes(storage: IStorage, io?: any) {
         if (chatMsg && chatMsg.trim()) {
           await addLog('minecraft', 'info', `💬 ${chatMsg}`);
           
+          // Check for goto session responses
+          const chatLower = chatMsg.toLowerCase();
+          
+          // Look for player responses like "<playername> yes" or "<playername> no"
+          const playerChatMatch = chatMsg.match(/^<(\w+)>\s*(.+)$/);
+          if (playerChatMatch) {
+            const [, playerName, playerMessage] = playerChatMatch;
+            const messageLower = playerMessage.toLowerCase().trim();
+            
+            // Check if this player has an active goto session awaiting reply
+            for (const [sessionId, session] of activeGotoSessions.entries()) {
+              if (session.targetPlayer === playerName && session.state === 'awaiting_reply') {
+                if (messageLower === 'yes') {
+                  minecraftBot.chat('me too i loved the server very much');
+                  await addLog('minecraft', 'info', `✅ ${playerName} said yes - bot responded positively`);
+                  cleanupGotoSession(sessionId);
+                  break;
+                } else if (messageLower === 'no') {
+                  minecraftBot.chat('I HATE YOU');
+                  await addLog('minecraft', 'info', `❌ ${playerName} said no - bot responded negatively`);
+                  cleanupGotoSession(sessionId);
+                  break;
+                }
+              }
+            }
+          }
+          
           // Send to Discord log channel if configured
           if (logChannel && discordBot) {
             try {
@@ -2380,23 +2519,47 @@ export function createRoutes(storage: IStorage, io?: any) {
       let response = '';
       let success = false;
       let isCommand = content.startsWith('/');
+      let isCustomCommand = content.startsWith('?');
 
       try {
-        if (isCommand) {
-          // It's a command - send as is
+        if (isCustomCommand) {
+          // Handle custom ? commands
+          const parts = content.slice(1).trim().split(' ');
+          const commandName = parts[0].toLowerCase();
+          
+          if (commandName === 'goto') {
+            if (parts.length < 2) {
+              response = 'Usage: ?goto <playername>';
+              success = false;
+            } else {
+              const targetPlayer = parts[1];
+              const result = await handleGotoCommand(targetPlayer, 'console_user');
+              response = result.message;
+              success = result.success;
+            }
+          } else {
+            response = `Unknown custom command: ${commandName}`;
+            success = false;
+          }
+          
+          await addLog('minecraft', 'info', `Custom command: ${content} - ${response}`);
+        } else if (isCommand) {
+          // It's a regular / command - send as is
           minecraftBot.chat(content);
           response = `Command executed: ${content}`;
           await addLog('minecraft', 'info', `Console command executed: ${content}`);
+          success = true;
         } else {
           // It's a chat message - send without prefix
           minecraftBot.chat(content);
           response = `Message sent: ${content}`;
           await addLog('minecraft', 'info', `Chat message sent: ${content}`);
+          success = true;
         }
-        success = true;
       } catch (error) {
-        response = `Failed to send ${isCommand ? 'command' : 'message'}: ${error.message}`;
-        await addLog('minecraft', 'error', `Console ${isCommand ? 'command' : 'message'} failed: ${content}`, error.message);
+        const commandType = isCustomCommand ? 'custom command' : (isCommand ? 'command' : 'message');
+        response = `Failed to send ${commandType}: ${error.message}`;
+        await addLog('minecraft', 'error', `Console ${commandType} failed: ${content}`, error.message);
       }
 
       const commandRecord = await storage.addConsoleCommand({
