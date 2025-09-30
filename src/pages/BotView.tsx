@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,11 +30,26 @@ import {
   SkipForward
 } from "lucide-react";
 
-// Socket.IO connection
-const socket = io('http://localhost:3001');
-
 export default function ControlBot() {
   const [isConnected, setIsConnected] = useState(false);
+  // Socket.IO connection - use relative URL for Replit compatibility
+  const socketRef = useRef<any>(null);
+  
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io({
+        path: '/socket.io',
+        transports: ['websocket', 'polling']
+      });
+    }
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+  
+  const socket = socketRef.current || { on: () => {}, off: () => {}, emit: () => {} };
   const [movementStates, setMovementStates] = useState({
     forward: false,
     back: false,
@@ -658,7 +673,7 @@ export default function ControlBot() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Control Bot</h1>
+            <h1 className="text-3xl font-bold text-foreground">Bot Control</h1>
             <p className="text-muted-foreground">Take manual control of your bot with 2D radar view</p>
           </div>
           <div className="flex items-center gap-2">

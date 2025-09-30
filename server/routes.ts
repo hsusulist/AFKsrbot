@@ -2195,6 +2195,17 @@ export function createRoutes(storage: IStorage, io?: any) {
       minecraftBot.on('playerJoined', async (player) => {
         await addLog('minecraft', 'info', `🟢 ${player.username} joined the server`);
         
+        // Send welcome message in Minecraft chat
+        if (player.username !== minecraftBot.username) {
+          setTimeout(() => {
+            try {
+              minecraftBot.chat(`Welcome ${player.username}!`);
+            } catch (error) {
+              console.log('Failed to send welcome message:', error.message);
+            }
+          }, 1000); // Small delay to ensure player is fully loaded
+        }
+        
         // Forward to Discord log channel
         if (discordBot && discordBot.user && logChannel) {
           try {
@@ -3208,6 +3219,79 @@ export function createRoutes(storage: IStorage, io?: any) {
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to get PvP status' });
+    }
+  });
+
+  // Aternos API endpoints
+  router.get('/api/aternos/config', async (req, res) => {
+    try {
+      const config = await storage.getAternosConfig?.() || {};
+      res.json(config);
+    } catch (error) {
+      res.json({
+        username: '',
+        serverName: '',
+        autoStart: false,
+        isLoggedIn: false,
+        serverStatus: 'offline'
+      });
+    }
+  });
+
+  router.post('/api/aternos/config', async (req, res) => {
+    try {
+      const { username, password, serverName, autoStart } = req.body;
+      
+      if (storage.saveAternosConfig) {
+        await storage.saveAternosConfig({
+          username,
+          password,
+          serverName,
+          autoStart,
+          isLoggedIn: false
+        });
+      }
+      
+      await addLog('system', 'info', `Aternos config saved for user: ${username}`);
+      res.json({ success: true, message: 'Aternos configuration saved' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to save Aternos configuration' });
+    }
+  });
+
+  router.post('/api/aternos/start', async (req, res) => {
+    try {
+      await addLog('system', 'info', 'Aternos server start requested');
+      res.json({ 
+        success: true, 
+        message: 'Aternos integration requires external API setup. This feature is currently limited.' 
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to start Aternos server' });
+    }
+  });
+
+  router.post('/api/aternos/stop', async (req, res) => {
+    try {
+      await addLog('system', 'info', 'Aternos server stop requested');
+      res.json({ 
+        success: true, 
+        message: 'Aternos integration requires external API setup. This feature is currently limited.' 
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to stop Aternos server' });
+    }
+  });
+
+  router.post('/api/aternos/restart', async (req, res) => {
+    try {
+      await addLog('system', 'info', 'Aternos server restart requested');
+      res.json({ 
+        success: true, 
+        message: 'Aternos integration requires external API setup. This feature is currently limited.' 
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to restart Aternos server' });
     }
   });
 

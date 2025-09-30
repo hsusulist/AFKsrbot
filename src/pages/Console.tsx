@@ -107,7 +107,20 @@ export default function Console() {
       // Extract chat message format: "<username> message"
       const chatMatch = content.match(/<([^>]+)>\s*(.*)/);
       if (chatMatch) {
-        content = `[${chatMatch[1]}] ${chatMatch[2]}`;
+        const username = chatMatch[1];
+        const message = chatMatch[2];
+        return {
+          id: index + 1000,
+          timestamp: new Date(log.createdAt).toLocaleTimeString("en-US", { 
+            hour12: false, 
+            hour: "2-digit", 
+            minute: "2-digit", 
+            second: "2-digit" 
+          }),
+          type: 'chat' as const,
+          content: message,
+          user: username // Use actual username instead of 'Game'
+        };
       }
     } else if (content.includes('joined') || content.includes('🟢')) {
       type = 'join';
@@ -127,7 +140,7 @@ export default function Console() {
       }),
       type: type as "command" | "response" | "error" | "info" | "chat" | "join" | "leave",
       content: content,
-      user: type === 'chat' ? 'Game' : undefined
+      user: undefined
     };
   }), ...consoleEntries].sort((a, b) => a.id - b.id);
 
