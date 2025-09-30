@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useAutosave } from "@/hooks/useAutosave";
 import { 
   Server, 
   Globe, 
@@ -22,18 +23,53 @@ import {
   Loader2
 } from "lucide-react";
 
+interface ServerSettings {
+  serverIP: string;
+  serverPort: string;
+  username: string;
+  password: string;
+  shouldRegister: boolean;
+  useWhitelist: boolean;
+  autoReconnect: boolean;
+  version: string;
+  platform: string;
+}
+
+const defaultSettings: ServerSettings = {
+  serverIP: "127.0.0.1",
+  serverPort: "25565",
+  username: "",
+  password: "",
+  shouldRegister: false,
+  useWhitelist: false,
+  autoReconnect: true,
+  version: "1.20.4",
+  platform: "java"
+};
+
 export default function ServerConfig() {
-  const [serverIP, setServerIP] = useState("127.0.0.1");
-  const [serverPort, setServerPort] = useState("25565");
-  const [username, setUsername] = useState("");
-  const [botPassword, setBotPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [shouldRegister, setShouldRegister] = useState(false);
-  const [useWhitelist, setUseWhitelist] = useState(false);
-  const [autoReconnect, setAutoReconnect] = useState(true);
-  const [version, setVersion] = useState("1.20.4");
-  const [platform, setPlatform] = useState("java");
   const { toast } = useToast();
+  
+  // Auto-save server settings - saves to localStorage AND backend
+  const { data: settings, setData: setSettings, isLoading: isAutoSaving, lastSaved } = useAutosave<ServerSettings>(
+    'minecraft-server-settings',
+    defaultSettings,
+    {
+      debounceMs: 1500,
+      onSave: async (data) => {
+        // Also save to backend
+        try {
+          await apiRequest('/api/minecraft/config', {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+          });
+        } catch (error) {
+          console.error('Failed to sync settings to backend:', error);
+        }
+      }
+    }
+  );
 
   // Get current config
   const { data: config, isLoading } = useQuery({
@@ -57,23 +93,23 @@ export default function ServerConfig() {
     playersOnline?: string;
   } | undefined;
 
-  // Update state when config loads
+  // Update settings when config loads from backend
   useEffect(() => {
     if (typedConfig) {
-      setServerIP(typedConfig.serverIP || "127.0.0.1");
-      setServerPort(typedConfig.serverPort || "25565");
-      setUsername(typedConfig.username || "");
-      // Don't override password if it's empty in config (API doesn't return passwords for security)
-      if (typedConfig.password) {
-        setBotPassword(typedConfig.password);
-      }
-      setShouldRegister(typedConfig.shouldRegister || false);
-      setUseWhitelist(typedConfig.useWhitelist || false);
-      setAutoReconnect(typedConfig.autoReconnect !== undefined ? typedConfig.autoReconnect : true);
-      setVersion(typedConfig.version || "1.20.4");
-      setPlatform(typedConfig.platform || "java");
+      setSettings(prev => ({
+        ...prev,
+        serverIP: typedConfig.serverIP || prev.serverIP,
+        serverPort: typedConfig.serverPort || prev.serverPort,
+        username: typedConfig.username || prev.username,
+        password: typedConfig.password || prev.password,
+        shouldRegister: typedConfig.shouldRegister ?? prev.shouldRegister,
+        useWhitelist: typedConfig.useWhitelist ?? prev.useWhitelist,
+        autoReconnect: typedConfig.autoReconnect ?? prev.autoReconnect,
+        version: typedConfig.version || prev.version,
+        platform: typedConfig.platform || prev.platform,
+      }));
     }
-  }, [typedConfig]);
+  }, [typedConfig, setSettings]);
 
   // Connect mutation
   const connectMutation = useMutation({
@@ -132,7 +168,7 @@ export default function ServerConfig() {
   const isConnected = typedConfig?.isConnected || false;
 
   const handleConnect = () => {
-    if (!serverIP.trim() || !serverPort.trim() || !username.trim()) {
+    if (!settings.serverIP.trim() || !settings.serverPort.trim() || !settings.username.trim()) {
       toast({
         title: "Error",
         description: "Please enter server IP, port, and username",
@@ -141,7 +177,7 @@ export default function ServerConfig() {
       return;
     }
 
-    if (botPassword && botPassword.length < 4) {
+    if (settings.password && settings.password.length < 4) {
       toast({
         title: "Error", 
         description: "Password must be at least 4 characters long",
@@ -151,15 +187,15 @@ export default function ServerConfig() {
     }
 
     connectMutation.mutate({
-      serverIP,
-      serverPort,
-      username,
-      password: botPassword || undefined,
-      shouldRegister,
-      version,
-      platform,
-      autoReconnect,
-      useWhitelist,
+      serverIP: settings.serverIP,
+      serverPort: settings.serverPort,
+      username: settings.username,
+      password: settings.password || undefined,
+      shouldRegister: settings.shouldRegister,
+      version: settings.version,
+      platform: settings.platform,
+      autoReconnect: settings.autoReconnect,
+      useWhitelist: settings.useWhitelist,
       mode24_7: true,
     });
   };
@@ -168,124 +204,31 @@ export default function ServerConfig() {
     disconnectMutation.mutate();
   };
 
-  // Save settings mutation - handles both manual and auto-save
+  // Manual save mutation
   const saveSettingsMutation = useMutation({
     mutationFn: (data: any) => apiRequest('/api/minecraft/config', {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
-    onSuccess: (data, variables) => {
-      // Reset in-flight flag for auto-saves
-      if (variables.__autoSave) {
-        inFlightRef.current = false;
-      }
-      
-      // Only show toast and invalidate for manual saves, not auto-saves
-      if (!variables.__autoSave) {
-        toast({
-          title: "✅ Settings Saved!",
-          description: "Your server configuration has been saved successfully.",
-        });
-        queryClient.invalidateQueries({ queryKey: ['/api/minecraft/config'] });
-      } else {
-        // For auto-saves, silently update the last saved reference
-        lastSavedConfigRef.current = {
-          serverIP,
-          serverPort,
-          username,
-          password: botPassword || undefined,
-          shouldRegister,
-          version,
-          platform,
-          autoReconnect,
-          useWhitelist,
-        };
-      }
+    onSuccess: () => {
+      toast({
+        title: "✅ Settings Saved!",
+        description: "Your server configuration has been saved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/minecraft/config'] });
     },
-    onError: (error: any, variables) => {
-      // Reset in-flight flag for auto-saves
-      if (variables.__autoSave) {
-        inFlightRef.current = false;
-      }
-      
-      // Only show error toast for manual saves
-      if (!variables.__autoSave) {
-        toast({
-          title: "Save Failed",
-          description: error.message || "Failed to save settings",
-          variant: "destructive",
-        });
-      }
+    onError: (error: any) => {
+      toast({
+        title: "Save Failed",
+        description: error.message || "Failed to save settings",
+        variant: "destructive",
+      });
     },
   });
 
   const handleSave = () => {
-    saveSettingsMutation.mutate({
-      serverIP,
-      serverPort,
-      username,
-      password: botPassword || undefined,
-      shouldRegister,
-      version,
-      platform,
-      autoReconnect,
-      useWhitelist,
-    });
+    saveSettingsMutation.mutate(settings);
   };
-
-  // Stable auto-save system - prevents infinite loops and spam
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const inFlightRef = useRef(false);
-  const lastSavedConfigRef = useRef<any>({});
-
-  // Auto-save when form values change (silent, no toasts/invalidation)
-  useEffect(() => {
-    // Only auto-save if config has loaded
-    if (!typedConfig) return;
-    
-    // Create current config object
-    const currentConfig = {
-      serverIP,
-      serverPort,
-      username,
-      password: botPassword || undefined,
-      shouldRegister,
-      version,
-      platform,
-      autoReconnect,
-      useWhitelist,
-    };
-    
-    // Only save if config has actually changed (dirty check)
-    const hasChanged = JSON.stringify(currentConfig) !== JSON.stringify(lastSavedConfigRef.current);
-    if (!hasChanged) return;
-    
-    // Clear any pending auto-save
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    // Don't start new auto-save if one is already in flight
-    if (inFlightRef.current) return;
-    
-    // Debounce auto-save (2 seconds)
-    timeoutRef.current = setTimeout(() => {
-      if (serverIP && serverPort && username && !inFlightRef.current) {
-        inFlightRef.current = true;
-        saveSettingsMutation.mutate({
-          ...currentConfig,
-          __autoSave: true, // Flag to prevent toasts/invalidation
-        });
-      }
-    }, 2000);
-    
-    // Cleanup on unmount
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [serverIP, serverPort, username, botPassword, shouldRegister, version, platform, autoReconnect, useWhitelist, typedConfig]);
 
   return (
     <Layout>
@@ -329,8 +272,8 @@ export default function ServerConfig() {
                 </Label>
                 <Input
                   id="serverIP"
-                  value={serverIP}
-                  onChange={(e) => setServerIP(e.target.value)}
+                  value={settings.serverIP}
+                  onChange={(e) => setSettings(prev => ({ ...prev, serverIP: e.target.value }))}
                   className="mt-1"
                   placeholder="127.0.0.1"
                 />
@@ -345,8 +288,8 @@ export default function ServerConfig() {
                 </Label>
                 <Input
                   id="serverPort"
-                  value={serverPort}
-                  onChange={(e) => setServerPort(e.target.value)}
+                  value={settings.serverPort}
+                  onChange={(e) => setSettings(prev => ({ ...prev, serverPort: e.target.value }))}
                   className="mt-1"
                   placeholder="25565"
                 />
@@ -361,8 +304,8 @@ export default function ServerConfig() {
                 </Label>
                 <Input
                   id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={settings.username}
+                  onChange={(e) => setSettings(prev => ({ ...prev, username: e.target.value }))}
                   className="mt-1"
                   placeholder="Enter bot username"
                   data-testid="input-username"
@@ -380,8 +323,8 @@ export default function ServerConfig() {
                   <Input
                     id="botPassword"
                     type={showPassword ? "text" : "password"}
-                    value={botPassword}
-                    onChange={(e) => setBotPassword(e.target.value)}
+                    value={settings.password}
+                    onChange={(e) => setSettings(prev => ({ ...prev, password: e.target.value }))}
                     placeholder="Enter password if required"
                     className="pr-10"
                   />
@@ -393,24 +336,39 @@ export default function ServerConfig() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {botPassword && botPassword.length > 0 && botPassword.length < 4 ? 
-                    "Password must be at least 4 characters long" :
-                    "Leave empty if no password is required (minimum 4 characters if used)"
-                  }
-                </p>
+                <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                  <span>
+                    {settings.password && settings.password.length > 0 && settings.password.length < 4 ? 
+                      "⚠️ Password must be at least 4 characters" :
+                      "Leave empty if not required (min 4 chars)"
+                    }
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {isAutoSaving && (
+                      <div className="flex items-center gap-1 text-primary">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                        <span>Saving...</span>
+                      </div>
+                    )}
+                    {lastSaved && !isAutoSaving && (
+                      <span className="text-success">
+                        ✓ Saved {lastSaved.toLocaleTimeString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-sm font-medium text-foreground">Register Account</Label>
                   <p className="text-xs text-muted-foreground">
-                    {shouldRegister ? "Bot will register with password (AuthMe compatible)" : "Bot will login with password (AuthMe compatible)"}
+                    {settings.shouldRegister ? "Bot will register with password (AuthMe compatible)" : "Bot will login with password (AuthMe compatible)"}
                   </p>
                 </div>
                 <Switch
-                  checked={shouldRegister}
-                  onCheckedChange={setShouldRegister}
+                  checked={settings.shouldRegister}
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, shouldRegister: checked }))}
                   data-testid="switch-register"
                 />
               </div>
@@ -420,8 +378,8 @@ export default function ServerConfig() {
                   <Label htmlFor="version">Minecraft Version</Label>
                   <select 
                     id="version"
-                    value={version}
-                    onChange={(e) => setVersion(e.target.value)}
+                    value={settings.version}
+                    onChange={(e) => setSettings(prev => ({ ...prev, version: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md text-sm"
                   >
                     <option value="1.20.4">1.20.4</option>
@@ -435,8 +393,8 @@ export default function ServerConfig() {
                   <Label htmlFor="platform">Platform</Label>
                   <select 
                     id="platform"
-                    value={platform}
-                    onChange={(e) => setPlatform(e.target.value)}
+                    value={settings.platform}
+                    onChange={(e) => setSettings(prev => ({ ...prev, platform: e.target.value }))}
                     className="w-full mt-1 px-3 py-2 bg-background border border-input rounded-md text-sm"
                   >
                     <option value="java">Java Edition</option>
@@ -452,8 +410,8 @@ export default function ServerConfig() {
                     <p className="text-xs text-muted-foreground">Automatically reconnect if connection is lost</p>
                   </div>
                   <Switch
-                    checked={autoReconnect}
-                    onCheckedChange={setAutoReconnect}
+                    checked={settings.autoReconnect}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoReconnect: checked }))}
                   />
                 </div>
 
@@ -473,8 +431,8 @@ export default function ServerConfig() {
                     <p className="text-xs text-muted-foreground">Only allow whitelisted users</p>
                   </div>
                   <Switch
-                    checked={useWhitelist}
-                    onCheckedChange={setUseWhitelist}
+                    checked={settings.useWhitelist}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, useWhitelist: checked }))}
                   />
                 </div>
               </div>
@@ -573,7 +531,7 @@ export default function ServerConfig() {
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Whitelist</span>
                     <span className="text-sm font-medium text-foreground">
-                      {useWhitelist ? "Enabled" : "Disabled"}
+                      {settings.useWhitelist ? "Enabled" : "Disabled"}
                     </span>
                   </div>
                 </div>
