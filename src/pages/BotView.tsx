@@ -60,6 +60,7 @@ export default function ControlBot() {
   const [selectedHotbarSlot, setSelectedHotbarSlot] = useState(0);
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pressedKeys = useRef(new Set<string>());
 
   // Get bot viewer data
   const { data: viewerData, isLoading } = useQuery({
@@ -392,8 +393,6 @@ export default function ControlBot() {
 
   // Modern keyboard handling for smooth movement like a normal player
   useEffect(() => {
-    const pressedKeys = useRef(new Set<string>());
-    
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isViewerConnected || !isManualControl) return;
       
