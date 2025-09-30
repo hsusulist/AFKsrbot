@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,24 +32,7 @@ import {
 
 export default function ControlBot() {
   const [isConnected, setIsConnected] = useState(false);
-  // Socket.IO connection - use relative URL for Replit compatibility
   const socketRef = useRef<any>(null);
-  
-  useEffect(() => {
-    if (!socketRef.current) {
-      socketRef.current = io({
-        path: '/socket.io',
-        transports: ['websocket', 'polling']
-      });
-    }
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-    };
-  }, []);
-  
-  const socket = socketRef.current || { on: () => {}, off: () => {}, emit: () => {} };
   const [movementStates, setMovementStates] = useState({
     forward: false,
     back: false,
@@ -101,19 +84,28 @@ export default function ControlBot() {
 
   const isViewerConnected = (viewerData as any)?.connected || false;
 
-  // Socket.IO event handlers
+  // Socket.IO connection and event handlers - merged into single effect
   useEffect(() => {
-    socket.on('connect', () => {
-      setIsConnected(true);
-      toast({
-        title: "Real-time Connected",
-        description: "Bot control stream is active",
+    // Create socket connection with relative URL for Replit compatibility
+    if (!socketRef.current) {
+      socketRef.current = io({
+        path: '/socket.io',
+        transports: ['websocket', 'polling']
       });
-    });
 
-    socket.on('disconnect', () => {
-      setIsConnected(false);
-      if (isManualControl) {
+      const socket = socketRef.current;
+
+      // Bind all event listeners
+      socket.on('connect', () => {
+        setIsConnected(true);
+        toast({
+          title: "Real-time Connected",
+          description: "Bot control stream is active",
+        });
+      });
+
+      socket.on('disconnect', () => {
+        setIsConnected(false);
         setIsManualControl(false);
         setControlLocked(false);
         toast({
@@ -121,81 +113,75 @@ export default function ControlBot() {
           description: "Connection lost, releasing control",
           variant: "destructive"
         });
-      }
-    });
-
-    socket.on('bot_position_update', (position) => {
-      setBotPosition(position);
-    });
-
-    socket.on('world_snapshot', (snapshot) => {
-      setWorldSnapshot(snapshot);
-      setBotPosition(snapshot.bot.pos);
-    });
-
-    socket.on('control_granted', () => {
-      setIsManualControl(true);
-      setControlLocked(true);
-      toast({
-        title: "Control Granted",
-        description: "You now have manual control of the bot",
       });
-    });
 
-    socket.on('control_denied', (data) => {
-      toast({
-        title: "Control Denied",
-        description: data.reason || "Another user has control",
-        variant: "destructive"
+      socket.on('bot_position_update', (position) => {
+        setBotPosition(position);
       });
-    });
 
-    socket.on('control_released', () => {
-      setIsManualControl(false);
-      setControlLocked(false);
-      setControlOwner(null);
-      toast({
-        title: "Control Released",
-        description: "Manual control has been released",
+      socket.on('world_snapshot', (snapshot) => {
+        setWorldSnapshot(snapshot);
+        setBotPosition(snapshot.bot.pos);
       });
-    });
 
-    socket.on('control_status', (status) => {
-      setControlLocked(status.locked);
-      setControlOwner(status.owner);
-      setIsManualControl(status.manual);
-    });
+      socket.on('control_granted', () => {
+        setIsManualControl(true);
+        setControlLocked(true);
+        toast({
+          title: "Control Granted",
+          description: "You now have manual control of the bot",
+        });
+      });
 
-    socket.on('pvp_status', (status) => {
-      setPvpEnabled(status.enabled);
-      setPvpTarget(status.target);
-    });
+      socket.on('control_denied', (data) => {
+        toast({
+          title: "Control Denied",
+          description: data.reason || "Another user has control",
+          variant: "destructive"
+        });
+      });
 
-    socket.on('inventory_updated', () => {
-      // Trigger inventory refresh if panel is open
-      if (showInventory) {
-        // This will be handled by a separate query
-      }
-    });
+      socket.on('control_released', () => {
+        setIsManualControl(false);
+        setControlLocked(false);
+        setControlOwner(null);
+        toast({
+          title: "Control Released",
+          description: "Manual control has been released",
+        });
+      });
 
+      socket.on('control_status', (status) => {
+        setControlLocked(status.locked);
+        setControlOwner(status.owner);
+        setIsManualControl(status.manual);
+      });
+
+      socket.on('pvp_status', (status) => {
+        setPvpEnabled(status.enabled);
+        setPvpTarget(status.target);
+      });
+
+      socket.on('inventory_updated', () => {
+        // Inventory refresh handled by separate query
+      });
+    }
+
+    // Cleanup on unmount
     return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('bot_position_update');
-      socket.off('world_snapshot');
-      socket.off('control_granted');
-      socket.off('control_denied');
-      socket.off('control_released');
-      socket.off('control_status');
-      socket.off('pvp_status');
-      socket.off('inventory_updated');
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, [isManualControl, showInventory]);
+  }, []);
 
   // Control functions
   const requestControl = useCallback(async () => {
     try {
-      socket.emit('control_request', { clientId: 'web-user' });
+      if (socketRef.current) {
+        socketRef.current.emit('control_request', { clientId: 'web-user' });
+      }
     } catch (error) {
       toast({
         title: "Control Request Failed",
@@ -207,7 +193,9 @@ export default function ControlBot() {
 
   const releaseControl = useCallback(async () => {
     try {
-      socket.emit('control_release');
+      if (socketRef.current) {
+        socketRef.current.emit('control_release');
+      }
       setIsManualControl(false);
       setControlLocked(false);
     } catch (error) {
@@ -221,7 +209,9 @@ export default function ControlBot() {
 
   const stopAllMovement = useCallback(() => {
     if (!isManualControl) return;
-    socket.emit('stop_all');
+    if (socketRef.current) {
+      socketRef.current.emit('stop_all');
+    }
     setMovementStates({
       forward: false,
       back: false,
@@ -392,7 +382,9 @@ export default function ControlBot() {
     if (!isManualControl) return;
     
     const heartbeat = setInterval(() => {
-      socket.emit('control_heartbeat');
+      if (socketRef.current) {
+        socketRef.current.emit('control_heartbeat');
+      }
     }, 5000); // Every 5 seconds
     
     return () => clearInterval(heartbeat);
@@ -493,14 +485,16 @@ export default function ControlBot() {
     
     const syncInterval = setInterval(() => {
       // Send current movement state to server at 20Hz
-      socket.emit('keys_state', {
-        forward: movementStates.forward,
-        back: movementStates.back,
-        left: movementStates.left,
-        right: movementStates.right,
-        jump: movementStates.jump,
-        sneak: movementStates.sneak
-      });
+      if (socketRef.current) {
+        socketRef.current.emit('keys_state', {
+          forward: movementStates.forward,
+          back: movementStates.back,
+          left: movementStates.left,
+          right: movementStates.right,
+          jump: movementStates.jump,
+          sneak: movementStates.sneak
+        });
+      }
     }, 50); // 20Hz
     
     return () => clearInterval(syncInterval);
@@ -916,10 +910,12 @@ export default function ControlBot() {
                     const deltaY = e.clientY - lastMousePos.y;
                     
                     // Send look delta to server
-                    socket.emit('look_delta', {
-                      deltaYaw: deltaX * 0.01,
-                      deltaPitch: deltaY * 0.01
-                    });
+                    if (socketRef.current) {
+                      socketRef.current.emit('look_delta', {
+                        deltaYaw: deltaX * 0.01,
+                        deltaPitch: deltaY * 0.01
+                      });
+                    }
                     
                     setLastMousePos({ x: e.clientX, y: e.clientY });
                   }}

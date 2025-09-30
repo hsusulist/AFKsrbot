@@ -485,6 +485,132 @@
       "type": "minecraft",
       "level": "info",
       "message": "<ClearLag> Removed 0 Entities!"
+    },
+    {
+      "id": "1759228254148fvqk34ysh",
+      "timestamp": "2025-09-30T10:30:54.148Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🚀 Starting connection to teddysmpp.aternos.me:39018..."
+    },
+    {
+      "id": "1759228254149bo3srru46",
+      "timestamp": "2025-09-30T10:30:54.149Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍  Checking server connectivity..."
+    },
+    {
+      "id": "1759228254654y6sxnworc",
+      "timestamp": "2025-09-30T10:30:54.654Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759228254654pso0h5ovb",
+      "timestamp": "2025-09-30T10:30:54.654Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌  Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "1759228255480m78yuprfm",
+      "timestamp": "2025-09-30T10:30:55.480Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "Connection ended before spawn event"
+    },
+    {
+      "id": "175922825548265r3ujeg1",
+      "timestamp": "2025-09-30T10:30:55.482Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "⏳ Retry 1/5 in 30 seconds: Connection ended unexpectedly before spawning in game."
+    },
+    {
+      "id": "1759228305913qph5483h7",
+      "timestamp": "2025-09-30T10:31:45.913Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "💾 Server configuration saved"
+    },
+    {
+      "id": "17592283109176j76yrdiy",
+      "timestamp": "2025-09-30T10:31:50.917Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🚀 Starting connection to teddysmpp.aternos.me:39018..."
+    },
+    {
+      "id": "1759228310917alb4qmvog",
+      "timestamp": "2025-09-30T10:31:50.917Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍  Checking server connectivity..."
+    },
+    {
+      "id": "1759228311425c689ev3nr",
+      "timestamp": "2025-09-30T10:31:51.425Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759228311425bw6a4r6gf",
+      "timestamp": "2025-09-30T10:31:51.425Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌  Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "1759228312186twijnwuo1",
+      "timestamp": "2025-09-30T10:31:52.186Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "Connection ended before spawn event"
+    },
+    {
+      "id": "1759228312187wjdujn51s",
+      "timestamp": "2025-09-30T10:31:52.187Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "⏳ Retry 1/5 in 30 seconds: Connection ended unexpectedly before spawning in game."
+    },
+    {
+      "id": "1759228342190o4zgjen1q",
+      "timestamp": "2025-09-30T10:32:22.190Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔍 Retry 1: Checking server connectivity..."
+    },
+    {
+      "id": "17592283426973340hfx9s",
+      "timestamp": "2025-09-30T10:32:22.697Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "✅ Server teddysmpp.aternos.me:39018 is online and reachable"
+    },
+    {
+      "id": "1759228342697gxucs2r9w",
+      "timestamp": "2025-09-30T10:32:22.697Z",
+      "type": "minecraft",
+      "level": "info",
+      "message": "🔌 Retry 1: Connecting to teddysmpp.aternos.me:39018 as Afkbot..."
+    },
+    {
+      "id": "17592283433310vqjh454o",
+      "timestamp": "2025-09-30T10:32:23.331Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "Connection ended before spawn event"
+    },
+    {
+      "id": "17592283433313fcmsa35v",
+      "timestamp": "2025-09-30T10:32:23.331Z",
+      "type": "minecraft",
+      "level": "warn",
+      "message": "⏳ Retry 2/5 in 60 seconds: Connection ended unexpectedly before spawning in game."
     }
   ],
   "inventory": [
