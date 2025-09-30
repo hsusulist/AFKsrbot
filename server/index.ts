@@ -7,7 +7,7 @@ import { createRoutes } from './routes';
 import { FileStorage } from './storage.file';
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || (process.env.NODE_ENV === 'production' ? 5000 : 3001);
 const httpServer = createServer(app);
 
 // Initialize Socket.IO with CORS support
