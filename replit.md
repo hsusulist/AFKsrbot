@@ -89,7 +89,18 @@ The application follows a hub-and-spoke navigation pattern with these main secti
 
 ## Recent Changes
 
-### October 1, 2025: Fresh GitHub Import Setup (Latest)
+### October 1, 2025: Discord /logs Command Improvements (Latest)
+**Enhanced Discord bot logging functionality with duplicate prevention and command aliasing:**
+- **Duplicate Message Fix**: Improved message filtering with robust regex patterns to eliminate duplicates between generic message handler and dedicated event handlers
+  - Player chat regex: `/^<([A-Za-z0-9_]{1,16})>\s.+$/` for strict username matching (1-16 characters, vanilla Minecraft compatible)
+  - Join/leave detection: `/^\w{1,16} (joined|left) the (game|server)/i` to skip events already handled by dedicated handlers
+  - Generic message handler now skips both player chat AND join/leave events, forwarding only system messages to Discord
+- **Command Execution Logging**: Added logging to Discord log channel when `/command` is used, showing executed commands with formatting
+- **User Experience**: Added `/logs` alias for the `/log` command - both commands work identically to set Discord log channel
+- **Message Formatting**: Player chat shows with bold usernames, system messages in code blocks, maintaining clear distinction
+- **No Data Loss**: All message types (player chat, join/leave, system messages, command executions) properly forwarded exactly once to configured Discord log channel
+
+### October 1, 2025: Fresh GitHub Import Setup
 - Successfully completed fresh GitHub import to Replit environment
 - Installed all project dependencies (786 packages) including concurrently, Express.js, Discord.js, and Mineflayer
 - Resolved all TypeScript LSP diagnostics and dependency issues completely
