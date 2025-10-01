@@ -32,7 +32,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "npx concurrently \"npm run dev\" \"npx tsx server/index.ts\""
 waitForPort = 8080
 
 [[ports]]
