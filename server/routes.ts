@@ -654,6 +654,10 @@ export function createRoutes(storage: IStorage, io?: any) {
           description: 'Set current channel to receive all Minecraft chat and events'
         },
         {
+          name: 'logs',
+          description: 'Set current channel to receive all Minecraft chat and events (alias)'
+        },
+        {
           name: 'start',
           description: 'Start the Minecraft bot connection'
         },
@@ -817,6 +821,7 @@ export function createRoutes(storage: IStorage, io?: any) {
               break;
               
             case 'log':
+            case 'logs':
               logChannel = channelId;
               await interaction.reply('✅ This channel will now receive all Minecraft chat and events!');
               break;
@@ -944,6 +949,18 @@ export function createRoutes(storage: IStorage, io?: any) {
                 minecraftBot.chat(`/${command}`);
                 await interaction.reply(`✅ Executed command: \`/${command}\``);
                 await addLog('minecraft', 'info', `Command executed: /${command}`, `Via Discord by ${user.tag}`);
+                
+                // Log command execution to Discord log channel if configured
+                if (logChannel && discordBot) {
+                  try {
+                    const channel = await discordBot.channels.fetch(logChannel);
+                    if (channel && channel.isTextBased() && 'send' in channel) {
+                      await channel.send(`🎮 **Command Executed**: \`/${command}\` (by ${user.tag})`);
+                    }
+                  } catch (err) {
+                    console.log('Failed to send command log to Discord:', err.message);
+                  }
+                }
               } catch (error) {
                 await interaction.reply('❌ Failed to execute command');
                 await addLog('error', 'error', `Failed to execute command: ${command}`, error.message);
@@ -1898,11 +1915,17 @@ export function createRoutes(storage: IStorage, io?: any) {
           }
           
           // Send to Discord log channel if configured
-          if (logChannel && discordBot) {
+          // Skip player chat messages (they're handled by the 'chat' event for better formatting)
+          const isPlayerChat = chatMsg.match(/^<([A-Za-z0-9_]{1,16})>\s.+$/);
+          // Skip join/leave messages (they're handled by playerJoined/playerLeft events)
+          const isJoinLeave = chatMsg.match(/^\w{1,16} (joined|left) the (game|server)/i);
+          
+          if (!isPlayerChat && !isJoinLeave && logChannel && discordBot) {
             try {
               const channel = await discordBot.channels.fetch(logChannel);
               if (channel && channel.isTextBased() && 'send' in channel) {
-                await channel.send(`\`\`\`💬 ${chatMsg}\`\`\``);
+                // Send system messages in code blocks
+                await channel.send(`\`\`\`${chatMsg}\`\`\``);
               }
             } catch (err) {
               console.log('Failed to send to Discord log channel:', err.message);
